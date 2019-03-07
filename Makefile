@@ -1,7 +1,7 @@
 MF=	Makefile
 IDIR =./include
-CC=icc 
-CFLAGS=-I$(IDIR)
+CC=mpicc 
+CFLAGS=-I$(IDIR) -lm
 
 ODIR=build/obj
 OFILES=\
@@ -9,6 +9,11 @@ OFILES=\
 	$(ODIR)/squirrel-functions.o\
 	$(ODIR)/main.o
 	
+OFILES2=\
+	$(ODIR)/pool.o\
+	$(ODIR)/test.o
+
+all: build/squirrels build/pool	
 
 $(ODIR)/%.o: src/%.c 	
 	mkdir -p build/obj
@@ -17,9 +22,10 @@ $(ODIR)/%.o: src/%.c
 build/squirrels: $(OFILES)
 	$(CC) $(CFLAGS)  $^ -o $@
 
+build/pool: $(OFILES2) 
+	$(CC) $(CFLAGS)  $^ -o $@
 
 
-all: build/squirrels
 
 clean:
 	rm -rf build
