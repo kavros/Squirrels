@@ -10,7 +10,7 @@
 // Pool options
 #define PP_QuitOnNoProcs 1
 #define PP_IgnoreOnNoProcs 0
-#define PP_DEBUG 1
+#define PP_DEBUG 0
 
 // Example command package data type which can be extended
 static MPI_Datatype PP_COMMAND_TYPE;
