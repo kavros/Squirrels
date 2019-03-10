@@ -7,13 +7,15 @@ ODIR=build/obj
 OFILES=\
 	$(ODIR)/ran2.o\
 	$(ODIR)/squirrel-functions.o\
-	$(ODIR)/main.o
+	$(ODIR)/main.o\
+	$(ODIR)/pool.o
+
 	
 OFILES2=\
 	$(ODIR)/pool.o\
 	$(ODIR)/test.o
 
-all: build/squirrels build/pool	
+all: build/squirrels build/testPool	
 
 $(ODIR)/%.o: src/%.c 	
 	mkdir -p build/obj
@@ -22,7 +24,7 @@ $(ODIR)/%.o: src/%.c
 build/squirrels: $(OFILES)
 	$(CC) $(CFLAGS)  $^ -o $@
 
-build/pool: $(OFILES2) 
+build/testPool: $(OFILES2) 
 	$(CC) $(CFLAGS)  $^ -o $@
 
 

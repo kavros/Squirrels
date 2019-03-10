@@ -2,5 +2,6 @@ Questions:
 - Is it better to implement a serial solution and then start with the parallel solution ?
 	+ if we dont use probabilities then we can validate our solution
 	- extra time
+- The random generator does not produce different data between different simulations.
 
 
