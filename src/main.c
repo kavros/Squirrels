@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <unistd.h>
 #include <stddef.h>
 #include "squirrel-functions.h"
 #include "mpi.h"
@@ -116,38 +117,51 @@ void errorMessage(char * message) {
 
 int actorCode()
 {
-	//printf("Actor\n");
-	
-
 	MPI_Status status;
-	// receive data from master
- 	//
- 	//
-	//printf("---sq.x = %f\n",sq.x);
-	
+	int cellToProc[numOfCells];
+
 	actorControlPackage actorPkg;
 	MPI_Recv(&actorPkg, 1, actorControlDataType, 0, 0, MPI_COMM_WORLD,&status);
 	if(actorPkg.type == SQUIRREL)
 	{
-		
 		squirrel sq;
-		MPI_Recv(&sq,1,squirrelDataType,0,0,MPI_COMM_WORLD,&status);
-		printf("Squirrel totalSteps=%d \n",sq.totalSteps);
-
-	}else if(actorPkg.type == CELL)
-	{
+		MPI_Recv(&sq,1,squirrelDataType,0,0,MPI_COMM_WORLD,&status); 			// receives squirrel data
+		//printf("Squirrel totalSteps=%d \n",sq.totalSteps);
+		MPI_Recv(&cellToProc,numOfCells,MPI_INT,0,0,MPI_COMM_WORLD,&status); 	// receives cell to mpi process mapping 
 		
+		/*for(int i=0; i<numOfCells; i++)
+		{
+			printf(" (%d,%d)",i,cellToProc[i]);
+		}
+		printf("\n" );*/
+		//printf("squirrel %d make a step to cell %d\n",myRank,cellToProc[sq.cell]);
+		int step= myRank;
+		MPI_Ssend(&step,1,MPI_INT,cellToProc[sq.cell],0,MPI_COMM_WORLD);
+
+	} else if(actorPkg.type == CELL)
+	{
 		cell cell;
 		MPI_Recv(&cell,1,cellDataType,0,0,MPI_COMM_WORLD,&status);
-		printf("Cell totalSquirrels = %d\n",cell.numOfSquirrels[0]);
-	}else{
-		printf("error\n");
+		//printf("Cell %d totalSquirrels = %d\n",myRank,cell.numOfSquirrels[0]);
+
+		int rank = -1;
+		for(int i=0; i < cell.numOfSquirrels[0]; i++)
+		{
+			MPI_Recv(&rank,1,MPI_INT,MPI_ANY_SOURCE,0,MPI_COMM_WORLD,&status);
+			//printf("cell %d receives squirrel %d\n", myRank,rank);
+		}
+		//sleep(1);
+		
 	}
+	MPI_Ssend(NULL, 0, MPI_INT, 0, 0, MPI_COMM_WORLD);
 
 
-	// decide what type of actor is based on the received data
-	// start steps of the month
+	int workerStatus = 1;
+	while(workerStatus)
+	{
+		workerStatus = workerSleep();
 
+	}
 }
 
 void initDatatypes()
@@ -235,6 +249,7 @@ int main(int argc, char *argv[])
 		cell 		grid[numOfCells];
 		squirrel 	squirrels[numOfSquirrels];
 		task		bag[TOTALMONTHS];
+		int 		cellToProc[numOfCells];
 		initDatatypes(squirrels,grid);
 		initSimulation(squirrels,grid,bag);
 
@@ -245,14 +260,33 @@ int main(int argc, char *argv[])
 			errorMessage("Not enough processes.");
 		}*/
 		int i, activeWorkers=0, returnCode;
-		MPI_Request initialWorkerRequests[numOfSquirrels];
+		MPI_Request initialWorkerRequests[numOfSquirrels+numOfCells];
 		MPI_Request requests[numOfSquirrels];
 		MPI_Status status;
 		actorControlPackage actorPkg;
+
+
+		for (i=0; i < numOfCells; i++) 
+		{
+								
+			int workerPid = startWorkerProcess();
+			cellToProc[i] = workerPid; 
+			//printf("workerPid = %d\n",workerPid);	
+			MPI_Irecv(NULL, 0, MPI_INT, workerPid, 0, MPI_COMM_WORLD, &initialWorkerRequests[i]); /// ??????
+			activeWorkers++;
+			actorPkg.type = CELL;
+			//fprintf(stderr,"---cellToProc[%d]=%d\n",i,workerPid);
+
+			MPI_Ssend(&actorPkg,1,actorControlDataType,workerPid,0,MPI_COMM_WORLD);
+			MPI_Ssend(&(grid[i]),1,cellDataType,workerPid,0,MPI_COMM_WORLD);
+
+			
+		}
+
 		for (i=0; i < numOfSquirrels; i++) 
 		{
 			int workerPid = startWorkerProcess();
-			MPI_Irecv(NULL, 0, MPI_INT, workerPid, 0, MPI_COMM_WORLD, &initialWorkerRequests[i]); /// ??????
+			MPI_Irecv(NULL, 0, MPI_INT, workerPid, 0, MPI_COMM_WORLD, &initialWorkerRequests[i+numOfCells]); /// ??????
 			//printf("workerPid = %d\n",workerPid);						
 			activeWorkers++;
 			//printf("Master started worker %d on MPI process %d\n", i , workerPid);
@@ -260,29 +294,40 @@ int main(int argc, char *argv[])
 			actorPkg.type = SQUIRREL; 
 			MPI_Ssend(&actorPkg,1,actorControlDataType,workerPid,0,MPI_COMM_WORLD);
 			MPI_Ssend(&(squirrels[i]),1,squirrelDataType,workerPid,0,MPI_COMM_WORLD);
-		}
 
-		for (i=0; i < numOfCells; i++) 
-		{
-								
-			int workerPid = startWorkerProcess();
-			//printf("workerPid = %d\n",workerPid);	
-			MPI_Irecv(NULL, 0, MPI_INT, workerPid, 0, MPI_COMM_WORLD, &initialWorkerRequests[i]); /// ??????
-			activeWorkers++;
-			actorPkg.type = CELL;
-			MPI_Ssend(&actorPkg,1,actorControlDataType,workerPid,0,MPI_COMM_WORLD);
-			MPI_Ssend(&(grid[i]),1,cellDataType,workerPid,0,MPI_COMM_WORLD);	
+			MPI_Ssend(&cellToProc[0],numOfCells,MPI_INT,workerPid,0,MPI_COMM_WORLD);
 		}
-		printf("End\n" );
+		//printf("----Actors Initialization finished\n" );
+
+		int masterStatus = masterPoll();
 		
-	}else{ 
+		while (masterStatus) {
+			masterStatus=masterPoll();
+
+			for (i=0;i< (numOfCells+numOfSquirrels);i++) {
+				// Checks all outstanding workers that master spawned to see if they have completed
+				if (initialWorkerRequests[i] != MPI_REQUEST_NULL) {
+					MPI_Test(&initialWorkerRequests[i], &returnCode, MPI_STATUS_IGNORE);
+					if (returnCode){
+						activeWorkers--;	
+						//printf("++++++++++Active workers now are %d \n",activeWorkers);
+					} 
+
+				}
+			}
+			// If we have no more active workers then quit poll loop which will effectively shut the pool down when  processPoolFinalise is called
+			if (activeWorkers==0)
+			{
+				break;
+			}
+		}
+		
+	}else if(statusCode== 1){ 
 		actorCode();
 	}
 
-
-
-	//printf("myRank is %d !!\n", myRank,seed);
-
+	processPoolFinalise();
+	
     MPI_Type_free(&squirrelDataType);
 	MPI_Finalize();
 	return 0;

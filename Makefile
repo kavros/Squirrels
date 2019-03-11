@@ -1,7 +1,7 @@
 MF=	Makefile
 IDIR =./include
 CC=mpicc 
-CFLAGS=-I$(IDIR) -lm
+CFLAGS=-I$(IDIR) -lm -g
 
 ODIR=build/obj
 OFILES=\
