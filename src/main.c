@@ -9,35 +9,24 @@
 
 const int numOfCells = 16;
 const int maxNumOfSquirrels=200;
-const int numOfSquirrels=34;
+const int numOfSquirrels=4;
 const double initialInfectionLevelForACell=4.0f/16.0f;
-const int currentMonth=1;
+const int currentMonth=0;
 
 int myRank;
 long state;
 MPI_Datatype squirrelDataType;
 MPI_Datatype cellDataType;
 MPI_Datatype actorControlDataType;
+MPI_Datatype squirrelStepInfoDataType;
+MPI_Datatype cellReplyInfoDataType;
 
-enum actorControlCommand
-{
-	MASTER_OF_POOL=0,
-	GLOBAL_CLOCK=1,
-	SQUIRREL=2,
-	CELL=3
-};
 
-typedef struct actorControlPackage
-{
-	enum actorControlCommand type;
-	//void* data;
-}actorControlPackage;
 
-typedef struct cell
+typedef struct task
 {
-	int numOfSquirrels[TOTALMONTHS];			// total number of squirrels in the cell for each month.
-	int numOfInfectedSquirrels[TOTALMONTHS];	// total number of infected squirrels for each month.	
-}cell;
+	int numberOfStepsPerMonth[TOTALMONTHS];
+}task;
 
 typedef struct squirrel
 {
@@ -53,10 +42,42 @@ typedef struct squirrel
 	int totalInfectionLevel;		// totalInfectionLevel for the last 50 steps
 }squirrel;
 
-typedef struct task
+typedef struct cell
 {
-	int numberOfStepsPerMonth[TOTALMONTHS];
-}task;
+	int numOfSquirrels[TOTALMONTHS];			// total number of squirrels in the cell for each month.
+	int numOfInfectedSquirrels[TOTALMONTHS];	// total number of infected squirrels for each month.	
+}cell;
+
+
+enum actorType
+{
+	MASTER_OF_POOL=0,
+	GLOBAL_CLOCK=1,
+	SQUIRREL=2,
+	CELL=3
+};
+
+typedef enum squirrelState
+{
+	INFECTED=0,
+	DEAD=1,
+	GIVING_BIRTH=2,
+	GIVING_BIRTH_AND_INFECTED=3,
+	HEALTHY
+}squirrelState;
+
+typedef struct actorData
+{
+	cell cell;
+	squirrel sq;		// squirrel data
+}actorData;
+
+typedef struct actorControlPackage
+{
+	enum actorType type;
+	actorData data;
+}actorControlPackage;
+
 
 void initSimulation(squirrel squirrels[],cell cells[],task bag[])
 {
@@ -71,7 +92,7 @@ void initSimulation(squirrel squirrels[],cell cells[],task bag[])
 		squirrels[i].cell = getCellFromPosition(x,y);
 		squirrels[i].x = x;
 		squirrels[i].y = y;
-		squirrels[i].totalSteps=5;
+		squirrels[i].totalSteps=100;
 		squirrels[i].remainingSteps=squirrels[i].totalSteps;
 		/*printf("squirel %d x = %f, y = %f,cell = %d, totalSteps = %d, remainingSteps = %d, isInfected = %d, isAlive = %d\n",
 			i,
@@ -101,10 +122,10 @@ void initSimulation(squirrel squirrels[],cell cells[],task bag[])
 			if(squirrels[j].cell == i)
 			{
 
-				cells[i].numOfSquirrels[currentMonth-1] =cells[i].numOfSquirrels[currentMonth-1]+1;
+				cells[i].numOfSquirrels[currentMonth] =cells[i].numOfSquirrels[currentMonth]+1;
 			}
 		}
-		cells[i].numOfInfectedSquirrels[currentMonth-1] = 0;
+		cells[i].numOfInfectedSquirrels[currentMonth] = 0;
 		//printf("cell %d,squirrels = %d \n",i,cells[i].numOfSquirrels[currentMonth-1]);
 		//printf("cell %d,infected squirrels = %d\n",i,cells[i].numOfInfectedSquirrels[currentMonth-1]);
 	}
@@ -114,6 +135,7 @@ void errorMessage(char * message) {
 	fprintf(stderr,"%4d: [ProcessPool] %s\n", myRank, message);
 	MPI_Abort(MPI_COMM_WORLD, 1);
 }
+
 
 int actorCode()
 {
@@ -135,8 +157,30 @@ int actorCode()
 		}
 		printf("\n" );*/
 		//printf("squirrel %d make a step to cell %d\n",myRank,cellToProc[sq.cell]);
-		int step= myRank;
-		MPI_Ssend(&step,1,MPI_INT,cellToProc[sq.cell],0,MPI_COMM_WORLD);
+		while(sq.remainingSteps != 0)
+		{
+			//printf("squirrel %d prev_x=%f, prev_y=%f, prev_cell=%d\n",myRank,sq.x,sq.y,sq.cell);
+			squirrelStep(sq.x,sq.y,&(sq.x),&(sq.y),&state);
+			int nextCell = getCellFromPosition(sq.x,sq.y);
+			sq.cell =nextCell;
+			//printf("squirrel %d next_x=%f, next_y=%f, next_cell=%d \n",myRank,sq.x,sq.y,sq.cell);
+
+
+			
+			sq.remainingSteps = sq.remainingSteps-1;
+		}
+		//MPI_Ssend(&step,1,MPI_INT,cellToProc[sq.cell],0,MPI_COMM_WORLD);
+		
+
+		//while currMonth != TOTAL_MONTHS
+			// while the squirel have remaining steps
+				// do step
+				// calculate totalPopulationInflux, totalInfectionLevel
+				// decide if isInfected, isAlive or is giving birth
+			// wait for others to finish the steps of the month
+			// start steps of the next month or terminate.
+
+
 
 	} else if(actorPkg.type == CELL)
 	{
@@ -147,7 +191,7 @@ int actorCode()
 		int rank = -1;
 		for(int i=0; i < cell.numOfSquirrels[0]; i++)
 		{
-			MPI_Recv(&rank,1,MPI_INT,MPI_ANY_SOURCE,0,MPI_COMM_WORLD,&status);
+			//MPI_Recv(&rank,1,MPI_INT,MPI_ANY_SOURCE,0,MPI_COMM_WORLD,&status);
 			//printf("cell %d receives squirrel %d\n", myRank,rank);
 		}
 		//sleep(1);
@@ -169,16 +213,16 @@ void initDatatypes()
 
 	//squirrel
     MPI_Datatype squirrelTypes[9] = {  
-    						MPI_C_BOOL,
-    						MPI_C_BOOL,
-    						MPI_FLOAT,
-    						MPI_FLOAT,
-    						MPI_INT, 
-    						MPI_INT, 
-    						MPI_INT, 
-    						MPI_INT,
-    						MPI_INT 
-    						};
+			    						MPI_C_BOOL,
+			    						MPI_C_BOOL,
+			    						MPI_FLOAT,
+			    						MPI_FLOAT,
+			    						MPI_INT, 
+			    						MPI_INT, 
+			    						MPI_INT, 
+			    						MPI_INT,
+			    						MPI_INT 
+    								};
     int squirrelBlockLen[9] = { 1,1,1,1,1,1,1,1,1 };
     MPI_Aint squirrelDisp[9];
  
@@ -208,9 +252,9 @@ void initDatatypes()
 
     //actor control 
     MPI_Datatype actorControlPackageType[1] = {MPI_INT};
-    int actorControlPackageBlockLen[1]={1};
+    int actorControlPackageBlockLen[1]		= {1};
     MPI_Aint actorControlPackageDisp[1];
-    actorControlPackageDisp[0] = offsetof(actorControlPackage,type);
+    actorControlPackageDisp[0] 				= offsetof(actorControlPackage,type);
     MPI_Type_create_struct(1,actorControlPackageBlockLen , actorControlPackageDisp, actorControlPackageType, &actorControlDataType);
     MPI_Type_commit(&actorControlDataType);
 
