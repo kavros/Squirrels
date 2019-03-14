@@ -24,6 +24,8 @@ typedef enum actorType
 	CELL=3,
 }actorType;
 
+
+
 typedef struct simulationMsg
 {
 	int command;
@@ -34,6 +36,24 @@ typedef struct simulationMsg
 	float y;
 	bool isInfected;
 }simulationMsg;
+
+typedef struct squirrel
+{
+	bool isInfected;
+	float x;
+	float y;
+	int cell;
+	
+	int totalPopulationInflux; 		// totalpopulationInflux for the last 50 steps
+	int totalInfectionLevel;		// totalInfectionLevel for the last 50 steps
+}squirrel;
+
+typedef struct cell
+{
+	int populationInflux;			
+	double infectionLevel;	
+}cell;
+
 
 simulationMsg startData;
 int cellNumStart;
@@ -48,27 +68,122 @@ int getActorIdFromCell(int cellNum)
 
 
 
+void squirrelDoComputeWork(simulationMsg** msgQueue,int* msgsInQueueCnt)
+{
+
+}
+
+
 
 void squirrelCode()
 {
-	squirrelStep(startData.x,startData.y,&(startData.x),&(startData.y),&state);
-	int nextCell = getCellFromPosition(startData.x,startData.y);
+	printf("SQUIRREL\n");
+	/*squirrel sq;
+	sq.isInfected 				= startData.isInfected;
+	sq.x 		  				= startData.x;
+	sq.y 		  				= startData.y;
+	sq.totalPopulationInflux    = 0;
+	sq.totalInfectionLevel 		= 0;
+	int totalSteps				= 0;
+	simulationMsg msgQueue[AC_MAX_MSG_QUEUE_SIZE];
+	int 		  actorIdQueue[AC_MAX_MSG_QUEUE_SIZE];
+	int msgsInQueueCnt			= 0;
+	int currentMonth			= 0;
+
+
+
+	squirrelStep(sq.x,sq.y,&(sq.x),&(sq.y),&state);
+	sq.cell = getCellFromPosition(sq.x,sq.y);
 	
-	int actorId = getActorIdFromCell(nextCell);
+	int cellActorId = getActorIdFromCell(sq.cell);
 	//printf("squirrel step to  cell %d with actorId %d \n",nextCell,actorId);
+	simulationMsg msg;
+	msg.actorType = SQUIRREL;
+	msg.isInfected = sq.isInfected;
+	
+	do
+	{
+		int outstanding =0;
+		AC_Iprobe(&outstanding);
+		if(!outstanding)
+		{
+			
+			//handle messages in queue
+			for(int i=0; i < msgsInQueueCnt; i++)
+			{
+				if(msgQueue[i].actorType == GLOBAL_CLOCK)
+				{
+					currentMonth++;
+					//printf("sq %d month %d\n", AC_GetActorId(),currentMonth);
+					simulationMsg msgToGC;
+					msgToGC.actorType = SQUIRREL;
+					msgToGC.isInfected = sq.isInfected;
+
+					AC_Bsend(&msgToGC,actorIdQueue[i]);
+				}
+				else if(msgQueue[i].actorType == CELL)
+				{
+
+				}
+				else
+				{
+					assert(0);
+				}
+			}
+			msgsInQueueCnt = 0;
+
+
+			//do a step
+			totalSteps++;
+		}
+		else
+		{
+			int sourceActorId = AC_Recv(&msg);
+			memcpy(&(msgQueue[msgsInQueueCnt]),&msg,sizeof(msg));
+			actorIdQueue[msgsInQueueCnt] = sourceActorId;
+			msgsInQueueCnt++;
+		}
+		
+	}while(currentMonth != TOTAL_MONTHS);
+*/
+
+	//AC_Recv(&msg);
+	
 
 }
 
 void cellCode()
 {
-	printf("cell %d\n",AC_GetActorId());
+	printf("CELL\n");
 
+	/*cell cl;
+	cl.populationInflux 	= 0;
+	cl.infectionLevel 	= 0;
+
+	//printf("cell %d\n",AC_GetActorId());
+	simulationMsg msg;
+	//int srcActorId = AC_Recv(&msg);
+	//printf("actor id %d received from %d\n",AC_GetActorId(),srcActorId );
+	AC_Recv(&msg);
+	//printf("%d\n",msg.actorType );*/
 }
 
 void globalClockCode()
 {	
-	printf("global clock\n");
+	printf("GLOBAL_CLOCK\n");
+	/*printf("global clock\n");
+	simulationMsg sendMsg;
+	simulationMsg recvMsg;
+	printf("-----%d\n",recvMsg.isInfected );
+	sendMsg.actorType = GLOBAL_CLOCK;
+	for(int i=0; i < TOTAL_MONTHS; i++)
+	{
+		AC_Bcast(&sendMsg,AC_GetActorId());
 
+		AC_Recv(&recvMsg);
+		printf("%d %d\n",recvMsg.actorType,recvMsg.isInfected );
+		sleep(1);
+	}*/
 }
 
 

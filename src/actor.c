@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "mpi.h"
 #include "pool.h"
 #include "actor.h"
@@ -7,6 +8,7 @@
 
 
 int AC_numActors;
+int AC_msgSizeInBytes;
 int AC_numOfDiffActorTypes;
 int* AC_diffActorsQuantity;
 void (**AC_functPtrs)();
@@ -20,23 +22,38 @@ void AC_Init(int argc, char *argv[])
 	MPI_Init(&argc,&argv);
 }
 
-void actor_Bsend(void* sendBuf,int destActorId)
+void AC_Bsend(void* sendBuf,int destActorId)
 {
 	int ret = MPI_Bsend( sendBuf, 1, AC_msgDataType, destActorId, 0, MPI_COMM_WORLD );
 	//MPI_Ssend( sendBuf, 1, AC_msgDataType, destActorId, 0, MPI_COMM_WORLD );
 	if(ret != MPI_SUCCESS ) errorMessage("MPI_Bsend failed");
 }
 
-MPI_Status actor_Receiv(void* event)
+int AC_Iprobe(int* outstanding)
+{
+	MPI_Status status;
+	MPI_Iprobe(MPI_ANY_SOURCE,0,MPI_COMM_WORLD,outstanding,&status);
+	return status.MPI_SOURCE;
+}
+
+int AC_Recv(void* event)
 {
 	MPI_Status status;
 	MPI_Recv( event, 1, AC_msgDataType, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status );
-	return status;
+	return status.MPI_SOURCE;
+}
+
+void AC_Bcast(void* event,int source_actroId)
+{
+	for(int actroId=1; actroId < AC_numActors; actroId++)
+	{
+		if(source_actroId == actroId) continue;
+		AC_Bsend(event,actroId);
+	}
 }
 
 
-
-static void AC_ActorCode()
+/*static void AC_ActorCode()
 {
 	int actorType=-1;
 	MPI_Recv(&actorType,1,MPI_INT,0,7,MPI_COMM_WORLD,MPI_STATUS_IGNORE); 
@@ -51,7 +68,6 @@ static void AC_ActorCode()
 	
 	
 	MPI_Send(NULL, 0, MPI_INT, 0, 0, MPI_COMM_WORLD);
-	//printf("111\n");
 	int workerStatus = 1;
 	while (workerStatus) 
 	{
@@ -59,6 +75,53 @@ static void AC_ActorCode()
 	}
 
 	
+
+}*/
+
+
+static void AC_ActorCode()
+{
+	int actorType=-1;
+	MPI_Recv(&actorType,1,MPI_INT,0,7,MPI_COMM_WORLD,MPI_STATUS_IGNORE); 
+	assert(actorType != -1);
+
+	void* msgQueue[AC_MAX_MSG_QUEUE_SIZE];
+	void* msg = malloc(sizeof(AC_GetMSgSize()));
+	for(int i=0; i < AC_MAX_MSG_QUEUE_SIZE; i++)
+	{
+		msgQueue[i] = malloc(sizeof(AC_GetMSgSize()));
+	}
+
+	int 		  actorIdQueue[AC_MAX_MSG_QUEUE_SIZE];
+	int msgsInQueueCnt			= 0;
+	int terminate 				= 0;
+	do
+	{
+		int outstanding =0;
+		AC_Iprobe(&outstanding);
+		if(!outstanding)
+		{
+			(*AC_functPtrs[actorType])();
+			terminate = 1;
+		}
+		else
+		{
+			int sourceActorId = AC_Recv(&msg);
+			memcpy(&(msgQueue[msgsInQueueCnt]),&msg,sizeof(msg));
+			actorIdQueue[msgsInQueueCnt] = sourceActorId;
+			msgsInQueueCnt++;
+		}
+		
+	}while(terminate != 1);
+
+
+	MPI_Send(NULL, 0, MPI_INT, 0, 0, MPI_COMM_WORLD);
+	int workerStatus = 1;
+	while (workerStatus) 
+	{
+		workerStatus = workerSleep();
+	}
+
 
 }
 
@@ -157,11 +220,22 @@ void AC_SetActorMsgDataType(int msgFields, AC_Datatype* msgDataTypeForEachField,
 
     int bufSize,msgSize;
     MPI_Pack_size( 1, AC_msgDataType, MPI_COMM_WORLD, &msgSize );
-    bufSize = 1000*msgSize;
+    bufSize = AC_MAX_MSG_QUEUE_SIZE *msgSize;
     int* buf = (int *)malloc( bufSize );
     MPI_Buffer_attach( buf, bufSize );
-}
 
+    AC_msgSizeInBytes =0 ;
+    for(int i=0; i<msgFields;i++)
+    {
+    	AC_msgSizeInBytes += sizeof(msgDataTypeForEachField[i]);
+    }
+
+    
+}
+int AC_GetMSgSize()
+{
+	return AC_msgSizeInBytes;
+}
 
 void AC_Finalize()
 {
