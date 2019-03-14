@@ -32,5 +32,6 @@ int startWorkerProcess();
 void shutdownPool();
 // Retrieves the optional data associated with the command, provides an example of how this can be done
 int getCommandData();
+void errorMessage(char*);
 
 #endif /* POOL_H_ */

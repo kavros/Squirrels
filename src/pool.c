@@ -24,7 +24,6 @@ static struct PP_Control_Package in_command;
 static MPI_Request PP_pollRecvCommandRequest = MPI_REQUEST_NULL;
 
 // Internal pool functions
-static void errorMessage(char*);
 static int startAwaitingProcessesIfNeeded(int, int);
 static int handleRecievedCommand();
 static void initialiseType();
@@ -246,7 +245,7 @@ static int handleRecievedCommand() {
 /**
  * Writes an error message to stderr and MPI Aborts
  */
-static void errorMessage(char * message) {
+void errorMessage(char * message) {
 	fprintf(stderr,"%4d: [ProcessPool] %s\n", PP_myRank, message);
 	MPI_Abort(MPI_COMM_WORLD, 1);
 }
