@@ -36,7 +36,7 @@ MPI_Status actor_Receiv(void* event)
 
 
 
-void AC_actorCode()
+static void AC_ActorCode()
 {
 	int actorType=-1;
 	MPI_Recv(&actorType,1,MPI_INT,0,7,MPI_COMM_WORLD,MPI_STATUS_IGNORE); 
@@ -48,9 +48,21 @@ void AC_actorCode()
 			(*AC_functPtrs[i])();
 		}
 	}
+	
+	
+	MPI_Send(NULL, 0, MPI_INT, 0, 0, MPI_COMM_WORLD);
+	//printf("111\n");
+	int workerStatus = 1;
+	while (workerStatus) 
+	{
+		workerStatus = workerSleep();
+	}
+
+	
+
 }
 
-void AC_poolMaster()
+static void AC_PoolMaster()
 {
 	
 	int activeWorkers=0;
@@ -64,25 +76,41 @@ void AC_poolMaster()
 			int workerPid = startWorkerProcess();	
 			activeWorkers++;
 			MPI_Irecv(NULL, 0, MPI_INT, workerPid, 0, MPI_COMM_WORLD, &initialWorkerRequests[cnt]);
-			//printf("Master started worker with MPI process %d\n",  workerPid);
-
-			/*sendBuf[0] = 1;				//command
-			sendBuf[1] = actorType;		//actor type
-			sendBuf[2] = AC_EMPTY;		//data*/
-			MPI_Ssend(&actorType,1,MPI_INT,workerPid,7,MPI_COMM_WORLD);
-		
 			
-			//actor_Bsend(msg,workerPid);
+			MPI_Ssend(&actorType,1,MPI_INT,workerPid,7,MPI_COMM_WORLD);
 			cnt++;
 	
 		}
 	}
+	int masterStatus = masterPoll();
+	int returnCode;
+	while (masterStatus) {
+		masterStatus=masterPoll();
+		for (int i=0;i< (AC_numActors);i++) {
+			// Checks all outstanding workers that master spawned to see if they have completed
+			if (initialWorkerRequests[i] != MPI_REQUEST_NULL) {
+				MPI_Test(&initialWorkerRequests[i], &returnCode, MPI_STATUS_IGNORE);
+				if (returnCode){
+					activeWorkers--;	
+					//printf("++++++++++Active workers now are %d \n",activeWorkers);
+				} 
+
+			}
+		}
+		// If we have no more active workers then quit poll loop which will effectively shut the pool down when  processPoolFinalise is called
+		if (activeWorkers==0)
+		{
+			break;
+		}
+	}
+	
+    //MPI_Type_free(&squirrelDataType);
 
 
 }
 
 
-void AC_runSimulation()
+void AC_RunSimulation()
 {
 
 	int statusCode = processPoolInit();
@@ -90,19 +118,18 @@ void AC_runSimulation()
 	if(statusCode == 2) //master
 	{
 
-		AC_poolMaster();
+		AC_PoolMaster();
 	}
 	else if(statusCode == 1)
 	{
-		AC_actorCode();
+		AC_ActorCode();
 	}
 
 	processPoolFinalise();	
-	MPI_Finalize();
 
 }
 
-void AC_setActorTypes(int totalActors,int numOfDiffActorTypes,int* quantityForEachType,void (**func_ptr_foreach_actorType)())
+void AC_SetActorTypes(int totalActors,int numOfDiffActorTypes,int* quantityForEachType,void (**func_ptr_foreach_actorType)())
 {
 	int expected_total_actors=0;
 	for(int i=0; i<numOfDiffActorTypes; i++)
@@ -114,9 +141,11 @@ void AC_setActorTypes(int totalActors,int numOfDiffActorTypes,int* quantityForEa
 	AC_functPtrs = func_ptr_foreach_actorType;
     AC_numOfDiffActorTypes = numOfDiffActorTypes;
     AC_diffActorsQuantity = quantityForEachType;
+
+    //create an array that maps actor type to rank
 }
 
-void AC_setActorMsgDataType(int msgFields, AC_Datatype* msgDataTypeForEachField, int* blockLen,MPI_Aint* disp)
+void AC_SetActorMsgDataType(int msgFields, AC_Datatype* msgDataTypeForEachField, int* blockLen,MPI_Aint* disp)
 {
 	//cell
     MPI_Datatype* actorMsgTypes 	= msgDataTypeForEachField;
@@ -134,12 +163,12 @@ void AC_setActorMsgDataType(int msgFields, AC_Datatype* msgDataTypeForEachField,
 }
 
 
-void AC_finalize()
+void AC_Finalize()
 {
 	MPI_Finalize();
 }
 
-int AC_getActorId()
+int AC_GetActorId()
 {
 	int myRank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
