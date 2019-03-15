@@ -68,16 +68,19 @@ int getActorIdFromCell(int cellNum)
 
 
 
-void squirrelDoComputeWork(simulationMsg** msgQueue,int* msgsInQueueCnt)
+
+
+int squirrelCode(simulationMsg** queue,int queueSize)
 {
-
-}
-
-
-
-void squirrelCode()
-{
-	printf("SQUIRREL\n");
+	//printf("SQUIRREL\n");
+	simulationMsg msg;
+	/*for(int i=0; i < queueSize; i++)
+	{
+		msg = *queue[i];
+		printf("%d \n",msg.actorType);
+		return 1;
+	}*/
+	return 0;
 	/*squirrel sq;
 	sq.isInfected 				= startData.isInfected;
 	sq.x 		  				= startData.x;
@@ -152,10 +155,19 @@ void squirrelCode()
 
 }
 
-void cellCode()
+int cellCode(simulationMsg** queue,int queueSize)
 {
-	printf("CELL\n");
 
+	//printf("CELL\n");
+	simulationMsg* msg;
+
+	for(int i=0; i < queueSize; i++)
+	{
+		msg = queue[i];
+		printf("%d \n",msg->actorType);
+		return 0;
+	}
+	return 0;
 	/*cell cl;
 	cl.populationInflux 	= 0;
 	cl.infectionLevel 	= 0;
@@ -167,23 +179,45 @@ void cellCode()
 	AC_Recv(&msg);
 	//printf("%d\n",msg.actorType );*/
 }
-
-void globalClockCode()
+int currentMonth = 0;
+int globalClockCode(simulationMsg** queue,int queueSize)
 {	
 	printf("GLOBAL_CLOCK\n");
-	/*printf("global clock\n");
+
+
+
+	simulationMsg msg;
+	msg.actorType = GLOBAL_CLOCK;
+	while(currentMonth < TOTAL_MONTHS)
+	{
+		AC_Bcast(&msg,AC_GetActorId());
+		sleep(1);
+		currentMonth++;
+	}
+	
+	/*for(int i=0; i < TOTAL_MONTHS; i++)
+	{
+		AC_Bcast(&msg,AC_GetActorId());
+		sleep(1);
+		/*for(int i=0;i<NUM_OF_CELLS+NUM_OF_SQUIRRELS; i++)
+		{
+			AC_Recv(&msg);
+		}
+	}*/
+	/*
 	simulationMsg sendMsg;
 	simulationMsg recvMsg;
-	printf("-----%d\n",recvMsg.isInfected );
+	
 	sendMsg.actorType = GLOBAL_CLOCK;
 	for(int i=0; i < TOTAL_MONTHS; i++)
 	{
 		AC_Bcast(&sendMsg,AC_GetActorId());
 
-		AC_Recv(&recvMsg);
-		printf("%d %d\n",recvMsg.actorType,recvMsg.isInfected );
+		//AC_Recv(&recvMsg);
+		//printf("%d %d\n",recvMsg.actorType,recvMsg.isInfected );
 		sleep(1);
 	}*/
+	return 1;
 }
 
 
@@ -201,7 +235,7 @@ int main(int argc, char *argv[])
 
 	int numOfActors 			= NUM_OF_SQUIRRELS+NUM_OF_CELLS+1;
 	int actorTypes 				= 3;
-	void (*func_ptrs[3])() 		= {squirrelCode,cellCode,globalClockCode};
+	int (*func_ptrs[3])() 		= {squirrelCode,cellCode,globalClockCode};
 	int actorTypes_quantity[3] 	= {NUM_OF_SQUIRRELS,NUM_OF_CELLS,1};
 	AC_SetActorTypes( numOfActors,actorTypes, actorTypes_quantity,func_ptrs);
 

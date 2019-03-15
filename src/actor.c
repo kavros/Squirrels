@@ -11,7 +11,7 @@ int AC_numActors;
 int AC_msgSizeInBytes;
 int AC_numOfDiffActorTypes;
 int* AC_diffActorsQuantity;
-void (**AC_functPtrs)();
+int (**AC_functPtrs)();
 MPI_Datatype AC_msgDataType;
 
 
@@ -101,13 +101,16 @@ static void AC_ActorCode()
 		AC_Iprobe(&outstanding);
 		if(!outstanding)
 		{
-			(*AC_functPtrs[actorType])();
-			terminate = 1;
+			//printf("%------d\n",msgsInQueueCnt );
+			
+			terminate = (*AC_functPtrs[actorType])(msgQueue,msgsInQueueCnt);
+			msgsInQueueCnt = 0;
+			//terminate = 1;
 		}
 		else
 		{
-			int sourceActorId = AC_Recv(&msg);
-			memcpy(&(msgQueue[msgsInQueueCnt]),&msg,sizeof(msg));
+			int sourceActorId = AC_Recv(msg);
+			memcpy((msgQueue[msgsInQueueCnt]),msg,sizeof(msg));
 			actorIdQueue[msgsInQueueCnt] = sourceActorId;
 			msgsInQueueCnt++;
 		}
@@ -192,7 +195,7 @@ void AC_RunSimulation()
 
 }
 
-void AC_SetActorTypes(int totalActors,int numOfDiffActorTypes,int* quantityForEachType,void (**func_ptr_foreach_actorType)())
+void AC_SetActorTypes(int totalActors,int numOfDiffActorTypes,int* quantityForEachType,int (**func_ptr_foreach_actorType)())
 {
 	int expected_total_actors=0;
 	for(int i=0; i<numOfDiffActorTypes; i++)
