@@ -53,31 +53,6 @@ void AC_Bcast(void* event,int source_actroId)
 }
 
 
-/*static void AC_ActorCode()
-{
-	int actorType=-1;
-	MPI_Recv(&actorType,1,MPI_INT,0,7,MPI_COMM_WORLD,MPI_STATUS_IGNORE); 
-	assert(actorType != -1);
-	for(int i=0; i < AC_numOfDiffActorTypes; i++)
-	{
-		if(actorType == i)
-		{
-			(*AC_functPtrs[i])();
-		}
-	}
-	
-	
-	MPI_Send(NULL, 0, MPI_INT, 0, 0, MPI_COMM_WORLD);
-	int workerStatus = 1;
-	while (workerStatus) 
-	{
-		workerStatus = workerSleep();
-	}
-
-	
-
-}*/
-
 
 static void AC_ActorCode()
 {
@@ -86,33 +61,34 @@ static void AC_ActorCode()
 	assert(actorType != -1);
 
 	void* msgQueue[AC_MAX_MSG_QUEUE_SIZE];
-	void* msg = malloc(sizeof(AC_GetMSgSize()));
+	void* msg = malloc(AC_msgSizeInBytes);
 	for(int i=0; i < AC_MAX_MSG_QUEUE_SIZE; i++)
 	{
-		msgQueue[i] = malloc(sizeof(AC_GetMSgSize()));
+		msgQueue[i] = malloc(AC_msgSizeInBytes);
 	}
 
-	int 		  actorIdQueue[AC_MAX_MSG_QUEUE_SIZE];
+	int actorIdQueue[AC_MAX_MSG_QUEUE_SIZE];
 	int msgsInQueueCnt			= 0;
 	int terminate 				= 0;
 	do
 	{
 		int outstanding =0;
 		AC_Iprobe(&outstanding);
-		if(!outstanding)
+		if(!outstanding || msgsInQueueCnt == AC_MAX_MSG_QUEUE_SIZE-1)
 		{
 			//printf("%------d\n",msgsInQueueCnt );
 			
-			terminate = (*AC_functPtrs[actorType])(msgQueue,msgsInQueueCnt);
+			terminate = (*AC_functPtrs[actorType])(msgQueue,msgsInQueueCnt,actorIdQueue);
 			msgsInQueueCnt = 0;
 			//terminate = 1;
 		}
 		else
 		{
 			int sourceActorId = AC_Recv(msg);
-			memcpy((msgQueue[msgsInQueueCnt]),msg,sizeof(msg));
+			memcpy((msgQueue[msgsInQueueCnt]),msg,AC_msgSizeInBytes);
 			actorIdQueue[msgsInQueueCnt] = sourceActorId;
 			msgsInQueueCnt++;
+			//printf("+++++%d\n",msgsInQueueCnt );
 		}
 		
 	}while(terminate != 1);
@@ -232,7 +208,6 @@ void AC_SetActorMsgDataType(int msgFields, AC_Datatype* msgDataTypeForEachField,
     {
     	AC_msgSizeInBytes += sizeof(msgDataTypeForEachField[i]);
     }
-
     
 }
 int AC_GetMSgSize()

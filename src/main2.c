@@ -17,6 +17,7 @@
 
 
 
+
 typedef enum actorType
 {
 	SQUIRREL=1,	
@@ -28,196 +29,337 @@ typedef enum actorType
 
 typedef struct simulationMsg
 {
+		int isInfected;
 	int command;
 	int actorType;
 	int populationInflux;
 	int infectionLevel;
 	float x;
 	float y;
-	bool isInfected;
+
 }simulationMsg;
 
 typedef struct squirrel
 {
-	bool isInfected;
+	int isInfected;
 	float x;
 	float y;
 	int cell;
-	
-	int totalPopulationInflux; 		// totalpopulationInflux for the last 50 steps
-	int totalInfectionLevel;		// totalInfectionLevel for the last 50 steps
+	int stepsCnt;
+	int populationInflux[50]; 		
+	int infectionLevel[50];	
+	int infectedSteps;	
 }squirrel;
 
 typedef struct cell
 {
-	int populationInflux;			
-	double infectionLevel;	
+	int populationInflux[TOTAL_MONTHS];			
+	int infectionLevel[TOTAL_MONTHS];	
 }cell;
 
 
 simulationMsg startData;
 int cellNumStart;
 long state;
+int currentMonth = 0;
+bool isActorInitialized = false;
 
+
+squirrel sqData;
+cell cellData;
 
 int getActorIdFromCell(int cellNum)
 {
 	return cellNumStart+cellNum+1;
 }
 
-
-
-
-
-
-int squirrelCode(simulationMsg** queue,int queueSize)
+int getCellNumFromActorId(int actorId)
 {
-	//printf("SQUIRREL\n");
-	simulationMsg msg;
-	/*for(int i=0; i < queueSize; i++)
-	{
-		msg = *queue[i];
-		printf("%d \n",msg.actorType);
-		return 1;
-	}*/
-	return 0;
-	/*squirrel sq;
-	sq.isInfected 				= startData.isInfected;
-	sq.x 		  				= startData.x;
-	sq.y 		  				= startData.y;
-	sq.totalPopulationInflux    = 0;
-	sq.totalInfectionLevel 		= 0;
-	int totalSteps				= 0;
-	simulationMsg msgQueue[AC_MAX_MSG_QUEUE_SIZE];
-	int 		  actorIdQueue[AC_MAX_MSG_QUEUE_SIZE];
-	int msgsInQueueCnt			= 0;
-	int currentMonth			= 0;
-
-
-
-	squirrelStep(sq.x,sq.y,&(sq.x),&(sq.y),&state);
-	sq.cell = getCellFromPosition(sq.x,sq.y);
-	
-	int cellActorId = getActorIdFromCell(sq.cell);
-	//printf("squirrel step to  cell %d with actorId %d \n",nextCell,actorId);
-	simulationMsg msg;
-	msg.actorType = SQUIRREL;
-	msg.isInfected = sq.isInfected;
-	
-	do
-	{
-		int outstanding =0;
-		AC_Iprobe(&outstanding);
-		if(!outstanding)
-		{
-			
-			//handle messages in queue
-			for(int i=0; i < msgsInQueueCnt; i++)
-			{
-				if(msgQueue[i].actorType == GLOBAL_CLOCK)
-				{
-					currentMonth++;
-					//printf("sq %d month %d\n", AC_GetActorId(),currentMonth);
-					simulationMsg msgToGC;
-					msgToGC.actorType = SQUIRREL;
-					msgToGC.isInfected = sq.isInfected;
-
-					AC_Bsend(&msgToGC,actorIdQueue[i]);
-				}
-				else if(msgQueue[i].actorType == CELL)
-				{
-
-				}
-				else
-				{
-					assert(0);
-				}
-			}
-			msgsInQueueCnt = 0;
-
-
-			//do a step
-			totalSteps++;
-		}
-		else
-		{
-			int sourceActorId = AC_Recv(&msg);
-			memcpy(&(msgQueue[msgsInQueueCnt]),&msg,sizeof(msg));
-			actorIdQueue[msgsInQueueCnt] = sourceActorId;
-			msgsInQueueCnt++;
-		}
-		
-	}while(currentMonth != TOTAL_MONTHS);
-*/
-
-	//AC_Recv(&msg);
-	
-
+	return actorId - NUM_OF_SQUIRRELS -1;
 }
 
-int cellCode(simulationMsg** queue,int queueSize)
+bool isTerminate()
 {
+	if(currentMonth == (TOTAL_MONTHS-1)){ //because we start from 0 month
+		// printf("actor %d  reach end of month\n",AC_GetActorId() );
+		return true;
+	}
+	return false;
+}
 
-	//printf("CELL\n");
-	simulationMsg* msg;
+
+void initSquirrelData()
+{
+	sqData.isInfected 				= startData.isInfected;
+	sqData.x						= startData.x;
+	sqData.y 						= startData.y;
+	sqData.stepsCnt  				= 0;
+	isActorInitialized 				= true;
+	sqData.infectedSteps					= 0;
+	for(int i=0; i<50; i++){ sqData.infectionLevel[i] =0; sqData.populationInflux[i] =0;}
+}
+
+int squirrelCode(simulationMsg** queue,int queueSize,int* actorIds)
+{
+	//printf("SQUIRREL\n");
+	
+	simulationMsg* recvMsg;
+	if(isActorInitialized == false)
+	{
+		initSquirrelData();
+	}
 
 	for(int i=0; i < queueSize; i++)
 	{
-		msg = queue[i];
-		printf("%d \n",msg->actorType);
-		return 0;
-	}
-	return 0;
-	/*cell cl;
-	cl.populationInflux 	= 0;
-	cl.infectionLevel 	= 0;
-
-	//printf("cell %d\n",AC_GetActorId());
-	simulationMsg msg;
-	//int srcActorId = AC_Recv(&msg);
-	//printf("actor id %d received from %d\n",AC_GetActorId(),srcActorId );
-	AC_Recv(&msg);
-	//printf("%d\n",msg.actorType );*/
-}
-int currentMonth = 0;
-int globalClockCode(simulationMsg** queue,int queueSize)
-{	
-	printf("GLOBAL_CLOCK\n");
-
-
-
-	simulationMsg msg;
-	msg.actorType = GLOBAL_CLOCK;
-	while(currentMonth < TOTAL_MONTHS)
-	{
-		AC_Bcast(&msg,AC_GetActorId());
-		sleep(1);
-		currentMonth++;
-	}
-	
-	/*for(int i=0; i < TOTAL_MONTHS; i++)
-	{
-		AC_Bcast(&msg,AC_GetActorId());
-		sleep(1);
-		/*for(int i=0;i<NUM_OF_CELLS+NUM_OF_SQUIRRELS; i++)
+		recvMsg = queue[i];
+		switch(recvMsg->actorType)
 		{
-			AC_Recv(&msg);
+			case GLOBAL_CLOCK:
+				//printf("actor %d month is %d \n",AC_GetActorId(),currentMonth);	
+				currentMonth++;
+				break;
+			case CELL:
+				sqData.populationInflux[sqData.stepsCnt] = sqData.populationInflux[sqData.stepsCnt] + recvMsg->populationInflux;
+				sqData.infectionLevel[sqData.stepsCnt]   = sqData.infectionLevel[sqData.stepsCnt]+recvMsg->infectionLevel;
+				//AC_Bsend()
+				break;
 		}
-	}*/
-	/*
-	simulationMsg sendMsg;
-	simulationMsg recvMsg;
+	}
 	
-	sendMsg.actorType = GLOBAL_CLOCK;
-	for(int i=0; i < TOTAL_MONTHS; i++)
-	{
-		AC_Bcast(&sendMsg,AC_GetActorId());
 
-		//AC_Recv(&recvMsg);
-		//printf("%d %d\n",recvMsg.actorType,recvMsg.isInfected );
-		sleep(1);
+
+	// squirrel does a random step
+	simulationMsg sendMsg;
+	sendMsg.actorType 	= SQUIRREL;
+	sendMsg.isInfected 	= sqData.isInfected;	
+	squirrelStep(sqData.x,sqData.y,&(sqData.x),&(sqData.y),&state);
+	sqData.cell 	= getCellFromPosition(sqData.x,sqData.y);
+	int cellActorId = getActorIdFromCell(sqData.cell);
+	/*if(sqData.isInfected){
+		printf("infected squirrel %d step to actorId %d \n",AC_GetActorId(),cellActorId);
 	}*/
-	return 1;
+
+
+	AC_Bsend(&sendMsg,cellActorId);
+	sqData.stepsCnt =sqData.stepsCnt+1;
+
+	if(sqData.isInfected == true)
+	{
+		sqData.infectedSteps++;
+		if(sqData.infectedSteps >= 50)
+		{
+			int die = willDie(&state);
+			if(die == true)
+			{
+				printf("squirrel %d died !\n",AC_GetActorId());
+				return die;
+			}
+		}
+		
+	}
+
+	// decide about state (born,infected)
+	if(sqData.stepsCnt == 50)
+	{
+
+		int sumPopulationInflux=0,sumInfectionLevel = 0;
+		float avgPopulationInflux=0,avgInfectionLevel=0;
+
+		
+		
+		for(int i=0; i < 50;i++) sumPopulationInflux += sqData.populationInflux[i];
+		avgPopulationInflux = ((float)sumPopulationInflux)/50.0f;
+		bool willReproduce = willGiveBirth(avgPopulationInflux,&state);
+		if(willReproduce == true)
+		{
+			printf("squirrel will reproduce \n");	
+		}
+		
+
+		if(sqData.isInfected == false)
+		{
+			for(int i=0; i < 50;i++)sumInfectionLevel +=sqData.infectionLevel[i];
+			avgInfectionLevel =  ((float)sumInfectionLevel)/50.0f;
+			sqData.isInfected  = willCatchDisease(avgInfectionLevel,&state);
+			//if(sqData.isInfected )printf("squirrel %d is infected\n",AC_GetActorId());
+		}
+
+		sqData.stepsCnt = 0;
+	}
+
+	return isTerminate();
+}
+void initCellData()
+{
+	isActorInitialized =true;
+	for(int i=0; i < 50; i++)
+	{
+		cellData.populationInflux[i] 	= 0;
+		cellData.infectionLevel[i]		= 0;
+	}
+}
+
+
+int  getPopulationInfluxForLast3Months()
+{
+	int populationInflux = 0;
+	if(currentMonth >= 2)
+	{
+		populationInflux = 
+			cellData.populationInflux[currentMonth] +
+			cellData.populationInflux[currentMonth-1] +
+			cellData.populationInflux[currentMonth -2];
+	}
+	else if(currentMonth == 1)
+	{
+		populationInflux = 
+			cellData.populationInflux[currentMonth] +
+			cellData.populationInflux[currentMonth-1];
+	}
+	else if( currentMonth == 0)
+	{
+		populationInflux = 
+			cellData.populationInflux[currentMonth];	
+	}
+	else
+	{
+		assert(0);
+	}
+	return populationInflux;
+}
+
+int getInfectionLevelForLast2Months()
+{
+	int infectionLevel = 0;
+	if(currentMonth == 0)
+	{
+		infectionLevel = cellData.infectionLevel[currentMonth]; 
+	}
+	else
+	{
+		infectionLevel = 
+			cellData.infectionLevel[currentMonth-1]+
+			cellData.infectionLevel[currentMonth];
+	}
+	//printf("--%d \n",infectionLevel);
+	return infectionLevel;
+}
+
+int cellCode(simulationMsg** msgQueue,int queueSize,int* actorIdsQueue)
+{
+	//printf("CELL\n" );
+
+	if(isActorInitialized == false)
+	{
+		initCellData();
+	}
+	simulationMsg sendMsg;
+	int destActorId;
+	simulationMsg* recvMsg;
+	for(int i=0; i < queueSize; i++)
+	{
+		recvMsg = msgQueue[i];
+		switch(recvMsg->actorType)
+		{
+			case GLOBAL_CLOCK:
+				//printf("actor %d month is %d \n",AC_GetActorId(),currentMonth);
+				sendMsg.actorType = CELL;
+				sendMsg.populationInflux = getPopulationInfluxForLast3Months(cellData);
+				sendMsg.infectionLevel   = getInfectionLevelForLast2Months(cellData);
+				destActorId =actorIdsQueue[i]; 
+				//if(currentMonth == 4) printf("%d\n",cellData.infectionLevel[currentMonth-2] );
+				AC_Bsend(&sendMsg,destActorId);	
+				//printf("cell %d send msg to GC p:%d i:%d \n",getCellNumFromActorId(AC_GetActorId()),sendMsg.populationInflux,sendMsg.infectionLevel);
+				currentMonth++;
+				break;
+			case SQUIRREL:
+				
+				cellData.populationInflux[currentMonth] = cellData.populationInflux[currentMonth]+1;
+				cellData.infectionLevel[currentMonth]   = cellData.infectionLevel[currentMonth]+recvMsg->isInfected;
+				//if(recvMsg->isInfected ) printf("++%d \n",recvMsg->isInfected);
+
+				sendMsg.actorType = CELL;
+				sendMsg.populationInflux = getPopulationInfluxForLast3Months(cellData);
+				sendMsg.populationInflux = getInfectionLevelForLast2Months(cellData);
+				destActorId =actorIdsQueue[i];
+				//if(recvMsg->isInfected )printf("cell %d received SQUIRREL %d \n",AC_GetActorId(),destActorId);
+				//printf("---- %d \n",recvMsg->command);
+				AC_Bsend(&sendMsg,destActorId);
+				break;
+
+		}
+	
+	}
+
+	return isTerminate();
+	
+}
+int globalClockCellInfo[NUM_OF_CELLS][2]; //holds infection level and population influx for each cell for a month.
+int totalMsgsFromCellsThisMonth =0;
+
+void initGlobalClock()
+{
+	for(int i=0;i<NUM_OF_CELLS;i++)
+	{
+		globalClockCellInfo[i][0] = 0;
+		globalClockCellInfo[i][1] = 0;
+	}
+	isActorInitialized=true;
+}
+
+int globalClockCode(simulationMsg** queue,int queueSize,int* actorIds)
+{	
+	if(isActorInitialized == false)
+	{
+		initGlobalClock();
+	}
+		//printf("GLOBAL_CLOCK\n");
+	simulationMsg* recvMsg;
+
+
+	for(int i=0; i < queueSize; i++)
+	{
+		recvMsg = queue[i];
+		switch(recvMsg->actorType)
+		{
+			case CELL:
+				//printf("GLOBAL_CLOCK received message form cell %d !\n",getCellNumFromActorId(actorIds[i]));
+				//printf("%d %d",getCellNumFromActorId(actorIds[i]),recvMsg->infectionLevel,recvMsg->populationInflux);
+				globalClockCellInfo[getCellNumFromActorId(actorIds[i])][0]=recvMsg->populationInflux;
+				globalClockCellInfo[getCellNumFromActorId(actorIds[i])][1]=recvMsg->infectionLevel;
+				totalMsgsFromCellsThisMonth++;
+				break;
+			case GLOBAL_CLOCK:
+				assert(0);			
+				break;
+			case SQUIRREL:
+				break;
+		}
+	}
+	if(currentMonth > 0){
+		if(totalMsgsFromCellsThisMonth < (NUM_OF_CELLS-1))
+		{
+			return 0;
+		}
+	}
+	totalMsgsFromCellsThisMonth=0;
+	printf("month: %d\n",currentMonth);
+	for(int i=0; i <NUM_OF_CELLS; i++)
+	{
+		printf("%d %d %d\n",i,globalClockCellInfo[i][0],globalClockCellInfo[i][1]);
+	}
+	printf("\n");
+	//if(cellMsgs < 16)
+	simulationMsg sendMsg;
+	sendMsg.actorType = GLOBAL_CLOCK;
+	AC_Bcast(&sendMsg,AC_GetActorId());
+	usleep(500);
+	currentMonth++;
+	
+	//currentMonth = currentMonth -1;//fix current month to be correct before call isTerminate
+
+	
+	return isTerminate();
 }
 
 
@@ -240,8 +382,9 @@ int main(int argc, char *argv[])
 	AC_SetActorTypes( numOfActors,actorTypes, actorTypes_quantity,func_ptrs);
 
 	int msgFields 							= 7;
-	AC_Datatype msgDataTypeForEachField[7] 	= {AC_INT,AC_INT,AC_INT,AC_INT,AC_FLOAT,AC_FLOAT,AC_BOOL};
+	AC_Datatype msgDataTypeForEachField[7] 	= {AC_INT,AC_INT,AC_INT,AC_INT,AC_FLOAT,AC_FLOAT,AC_INT};
 	int blockLen[7]							= {1,1,1,1,1,1,1};
+	//printf("sizeof(struct) = %d\n",sizeof(simulationMsg));
 	MPI_Aint simulationMsgDisp[7];
 	simulationMsgDisp[0] = offsetof(simulationMsg, command);
 	simulationMsgDisp[1] = offsetof(simulationMsg, actorType);
@@ -275,8 +418,6 @@ int main(int argc, char *argv[])
  	{
  		
  		startData.actorType = CELL;
-
-
  	}
  	else if(actorId >= NUM_OF_SQUIRRELS+NUM_OF_CELLS && actorId < (NUM_OF_SQUIRRELS+NUM_OF_CELLS+1))
  	{
