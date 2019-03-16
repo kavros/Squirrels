@@ -2,3 +2,4 @@ TODO:
 	- add assertions inside framework
 	- initialize all fields of message before send
 	- WE DONT NEED STARTDATA AT MAIN
+	- if put value isInfected at the end of the struct I have a bug

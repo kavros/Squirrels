@@ -24,7 +24,7 @@ OFILES3=\
 
 all: build/squirrels build/testPool	 build/squirrels2
 
-$(ODIR)/%.o: src/%.c	
+$(ODIR)/%.o: src/%.c 	
 	mkdir -p build/obj
 	$(CC) $(CFLAGS) -c $< -o $@
 

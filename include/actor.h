@@ -8,6 +8,9 @@
 #define AC_Datatype MPI_Datatype
 #define AC_MAX_MSG_QUEUE_SIZE 1000
 
+#define AC_TERMINATE_ACTOR 1
+#define AC_KEEP_ACTOR_ALIVE 0
+
 void AC_Init(int argc, char *argv[]);
 void AC_Bsend(void* sendBuf,int destActorId);
 int AC_Iprobe(int* outstanding);
