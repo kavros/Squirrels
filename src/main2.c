@@ -20,33 +20,33 @@
 
 typedef enum actorType
 {
-	SQUIRREL=1,	
+	SQUIRREL=0,	
 	GLOBAL_CLOCK=2,
 	CELL=3,
 }actorType;
 
-typedef enum commandTypes
+typedef enum squirrelState
 {
 	SQUIRREL_IS_DEAD = 14,
 	SQUIRREL_IS_INFECTED = 1,
-	SQUIRREL_IS_BORN =3
-}commandTypes;
+	SQUIRREL_GIVING_BIRTH =3,
+	SQUIRREL_IS_HEALTHY = 4
+}squirrelState;
 
 typedef struct simulationMsg
 {
-	int isInfected;
-	int command;    // ?
+	squirrelState sqState;    
 	int actorType;
 	int populationInflux;
 	int infectionLevel;
-	float x;  // ?
-	float y;  // ?
+	float x;  
+	float y;  
 
 }simulationMsg;
 
 typedef struct squirrel
 {
-	int isInfected;
+	squirrelState sqState;
 	float x;
 	float y;
 	int cell;
@@ -72,6 +72,7 @@ int 			globalClockActorId;
 
 squirrel sqData;
 cell cellData;
+bool isSquirrelBornFromAnotherSquirrel;
 
 int getActorIdFromCell(int cellNum)
 {
@@ -95,7 +96,7 @@ bool isTerminate()
 
 void initSquirrelData()
 {
-	sqData.isInfected 				= startData.isInfected;
+	sqData.sqState 					= startData.sqState;
 	sqData.x						= startData.x;
 	sqData.y 						= startData.y;
 	sqData.stepsCnt  				= 0;
@@ -103,7 +104,14 @@ void initSquirrelData()
 	sqData.infectedSteps					= 0;
 	for(int i=0; i<50; i++){ sqData.infectionLevel[i] =0; sqData.populationInflux[i] =0;}
 }
-
+void resetSquirrelData()
+{
+	sqData.sqState 			= SQUIRREL_IS_HEALTHY;
+	sqData.stepsCnt			= 0;
+	sqData.infectedSteps 	= 0;
+	isSquirrelBornFromAnotherSquirrel = true;
+	isActorInitialized =false;
+}
 int squirrelCode(simulationMsg** queue,int queueSize,int* actorIds)
 {
 	//printf("SQUIRREL\n");
@@ -111,7 +119,24 @@ int squirrelCode(simulationMsg** queue,int queueSize,int* actorIds)
 	simulationMsg* recvMsg;
 	if(isActorInitialized == false)
 	{
-		initSquirrelData();
+		if(isSquirrelBornFromAnotherSquirrel == true)
+		{
+			
+			//get parent position
+			/*simulationMsg parentData;
+			AC_Recv(&parentData);
+			sqData.x=parentData.x;
+			sqData.y=parentData.y;
+			printf("new squirrel %d generated at (%f,%f) !\n",AC_GetActorId(),sqData.x,sqData.y);
+			isActorInitialized =true;*/
+
+		}
+		else
+		{
+			initSquirrelData();
+		}
+
+		
 	}
 
 	for(int i=0; i < queueSize; i++)
@@ -120,13 +145,11 @@ int squirrelCode(simulationMsg** queue,int queueSize,int* actorIds)
 		switch(recvMsg->actorType)
 		{
 			case GLOBAL_CLOCK:
-				//printf("actor %d month is %d \n",AC_GetActorId(),currentMonth);	
 				currentMonth++;
 				break;
 			case CELL:
 				sqData.populationInflux[sqData.stepsCnt] = sqData.populationInflux[sqData.stepsCnt] + recvMsg->populationInflux;
 				sqData.infectionLevel[sqData.stepsCnt]   = sqData.infectionLevel[sqData.stepsCnt]+recvMsg->infectionLevel;
-				//AC_Bsend()
 				break;
 		}
 	}
@@ -136,7 +159,7 @@ int squirrelCode(simulationMsg** queue,int queueSize,int* actorIds)
 	// squirrel does a random step
 	simulationMsg sendMsg;
 	sendMsg.actorType 	= SQUIRREL;
-	sendMsg.isInfected 	= sqData.isInfected;	
+	sendMsg.sqState 	= sqData.sqState;	
 	squirrelStep(sqData.x,sqData.y,&(sqData.x),&(sqData.y),&state);
 	sqData.cell 	= getCellFromPosition(sqData.x,sqData.y);
 	int cellActorId = getActorIdFromCell(sqData.cell);
@@ -144,11 +167,11 @@ int squirrelCode(simulationMsg** queue,int queueSize,int* actorIds)
 		printf("infected squirrel %d step to actorId %d \n",AC_GetActorId(),cellActorId);
 	}*/
 
-	
+	if(cellActorId < 0) printf("%f\n",sqData.x);	
 	AC_Bsend(&sendMsg,cellActorId);
 	sqData.stepsCnt =sqData.stepsCnt+1;
 
-	if(sqData.isInfected == true)
+	if(sqData.sqState == SQUIRREL_IS_INFECTED)
 	{
 		sqData.infectedSteps++;
 		if(sqData.infectedSteps >= 50)
@@ -156,11 +179,13 @@ int squirrelCode(simulationMsg** queue,int queueSize,int* actorIds)
 			int die = willDie(&state);
 			if(die == true)
 			{
-				printf("squirrel %d died !\n",AC_GetActorId());
-				sendMsg.command = SQUIRREL_IS_DEAD;
+
+				//printf("squirrel %d died !\n",AC_GetActorId());
+				sendMsg.sqState = SQUIRREL_IS_DEAD;
 				sendMsg.actorType = SQUIRREL;
 				//printf("%d\n",globalClockActorId );
 				AC_Bsend(&sendMsg,globalClockActorId);
+				resetSquirrelData();
 				return AC_TERMINATE_ACTOR;
 			}
 		}
@@ -181,17 +206,29 @@ int squirrelCode(simulationMsg** queue,int queueSize,int* actorIds)
 		bool willReproduce = willGiveBirth(avgPopulationInflux,&state);
 		if(willReproduce == true)
 		{
-			//printf("squirrel will reproduce \n");
-
+			printf("squirrel will reproduce at (%f,%f) \n",sqData.x,sqData.y);
+			/*int actorId = AC_CreateNewActor(SQUIRREL);
+			simulationMsg childStartPosition;
+			childStartPosition.x = sqData.x;
+			childStartPosition.y = sqData.y;
+			AC_Bsend(&childStartPosition,actorId);*/
 		}
 		
 
-		if(sqData.isInfected == false)
+		if(sqData.sqState == SQUIRREL_IS_HEALTHY)
 		{
 			for(int i=0; i < 50;i++)sumInfectionLevel +=sqData.infectionLevel[i];
-			avgInfectionLevel =  ((float)sumInfectionLevel)/50.0f;
-			sqData.isInfected  = willCatchDisease(avgInfectionLevel,&state);
-			//if(sqData.isInfected )printf("squirrel %d is infected\n",AC_GetActorId());
+			avgInfectionLevel = ((float)sumInfectionLevel)/50.0f;
+			
+			if(willCatchDisease(avgInfectionLevel,&state) == 1)
+			{ 
+				sqData.sqState =SQUIRREL_IS_INFECTED;
+				
+				sendMsg.actorType = SQUIRREL;
+				sendMsg.sqState   = SQUIRREL_IS_INFECTED;
+				AC_Bsend(&sendMsg,globalClockActorId);
+			}
+			
 		}
 
 		sqData.stepsCnt = 0;
@@ -285,7 +322,8 @@ int cellCode(simulationMsg** msgQueue,int queueSize,int* actorIdsQueue)
 			case SQUIRREL:
 				
 				cellData.populationInflux[currentMonth] = cellData.populationInflux[currentMonth]+1;
-				cellData.infectionLevel[currentMonth]   = cellData.infectionLevel[currentMonth]+recvMsg->isInfected;
+				if(recvMsg->sqState == SQUIRREL_IS_INFECTED)
+					cellData.infectionLevel[currentMonth]   = cellData.infectionLevel[currentMonth]+1;
 				//if(recvMsg->isInfected ) printf("++%d \n",recvMsg->isInfected);
 
 				sendMsg.actorType = CELL;
@@ -317,15 +355,15 @@ void sendChangeMonthCmd()
 	simulationMsg sendMsg;
 	sendMsg.actorType = GLOBAL_CLOCK;
 	AC_Bcast(&sendMsg,AC_GetActorId());
-	usleep(500);
+	usleep(50);
 	currentMonth++;
-	totalMsgsFromCellsThisMonth=0;
 
 }
 
 void printOutput()
 {
-	printf("month: %d\n",currentMonth);
+
+	printf("[Global Clock] The month %d has %d alive and %d infected squirrels\n",currentMonth,numOfAliveSquirrels,numofInfectedSquirrels);
 	for(int i=0; i <NUM_OF_CELLS; i++)
 	{
 		printf("%d %d %d\n",i,globalClockCellInfo[i][0],globalClockCellInfo[i][1]);
@@ -371,17 +409,20 @@ int globalClockCode(simulationMsg** queue,int queueSize,int* actorIds)
 				assert(0);			
 				break;
 			case SQUIRREL:
-				if(recvMsg->command == SQUIRREL_IS_DEAD)
+				if(recvMsg->sqState == SQUIRREL_IS_DEAD)
 				{
-					printf("Received msg from dead squirrel %d \n",actorIds[i]);
+					//printf("Received msg from dead squirrel %d \n",actorIds[i]);
+					numOfAliveSquirrels--;
+					numofInfectedSquirrels--;
 				}
-				else if(recvMsg->command == SQUIRREL_IS_INFECTED)
+				else if(recvMsg->sqState == SQUIRREL_IS_INFECTED)
 				{
-					printf("Received msg from infected squirrel %d \n",actorIds[i]);
+					//printf("Received msg from infected squirrel %d \n",actorIds[i]);
+					numofInfectedSquirrels++;
 				}
-				else if(recvMsg->command == SQUIRREL_IS_BORN)
+				else if(recvMsg->sqState == SQUIRREL_GIVING_BIRTH)
 				{
-					
+					numOfAliveSquirrels++;
 				}
 				else
 				{
@@ -401,6 +442,8 @@ int globalClockCode(simulationMsg** queue,int queueSize,int* actorIds)
 	{
 		return AC_KEEP_ACTOR_ALIVE;
 	}
+	totalMsgsFromCellsThisMonth=0;
+
 
 	
 	if(isThisTheLastMonth)
@@ -439,18 +482,19 @@ int main(int argc, char *argv[])
 	int actorTypes_quantity[3] 	= {NUM_OF_SQUIRRELS,NUM_OF_CELLS,1};
 	AC_SetActorTypes( numOfActors,actorTypes, actorTypes_quantity,func_ptrs);
 
-	int msgFields 							= 7;
-	AC_Datatype msgDataTypeForEachField[7] 	= {AC_INT,AC_INT,AC_INT,AC_INT,AC_FLOAT,AC_FLOAT,AC_INT};
-	int blockLen[7]							= {1,1,1,1,1,1,1};
+	int msgFields 							= 6;
+	AC_Datatype msgDataTypeForEachField[6] 	= {AC_INT,AC_INT,AC_INT,AC_INT,AC_FLOAT,AC_FLOAT};
+	int blockLen[6]							= {1,1,1,1,1,1};
 	//printf("sizeof(struct) = %d\n",sizeof(simulationMsg));
 	MPI_Aint simulationMsgDisp[7];
-	simulationMsgDisp[0] = offsetof(simulationMsg, command);
+	simulationMsgDisp[0] = offsetof(simulationMsg, sqState);
 	simulationMsgDisp[1] = offsetof(simulationMsg, actorType);
 	simulationMsgDisp[2] = offsetof(simulationMsg, populationInflux);
 	simulationMsgDisp[3] = offsetof(simulationMsg, infectionLevel);
 	simulationMsgDisp[4] = offsetof(simulationMsg, x);
 	simulationMsgDisp[5] = offsetof(simulationMsg, y);
-	simulationMsgDisp[7] = offsetof(simulationMsg, isInfected);
+	
+
 
 	AC_SetActorMsgDataType(msgFields, msgDataTypeForEachField,blockLen,simulationMsgDisp);
 	
@@ -464,12 +508,13 @@ int main(int argc, char *argv[])
  		if(actorId <= 4)
  		{
  			
- 			startData.isInfected = true;
+ 			startData.sqState = SQUIRREL_IS_INFECTED;
  		}
  		else
  		{
- 			startData.isInfected = false;
+ 			startData.sqState = SQUIRREL_IS_HEALTHY;
  		}
+ 		isSquirrelBornFromAnotherSquirrel = false;
  		//printf("s---------%d\n",AC_GetActorId());
  	}
  	else if(actorId >= (NUM_OF_SQUIRRELS+1) && actorId <= (NUM_OF_SQUIRRELS+NUM_OF_CELLS))
@@ -487,6 +532,12 @@ int main(int argc, char *argv[])
  	
  	globalClockActorId = NUM_OF_SQUIRRELS+NUM_OF_CELLS+1;
 	
+	if(actorId> NUM_OF_SQUIRRELS+NUM_OF_CELLS+1)
+	{
+		isSquirrelBornFromAnotherSquirrel = true;	
+		startData.actorType = SQUIRREL;
+	}
+
 	cellNumStart = NUM_OF_SQUIRRELS+1;
 
 	AC_RunSimulation();

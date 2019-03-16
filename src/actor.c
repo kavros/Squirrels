@@ -57,7 +57,8 @@ void AC_Bcast(void* event,int source_actroId)
 static void AC_ActorCode()
 {
 	int actorType=-1;
-	MPI_Recv(&actorType,1,MPI_INT,0,7,MPI_COMM_WORLD,MPI_STATUS_IGNORE); 
+	MPI_Recv(&actorType,1,MPI_INT,MPI_ANY_SOURCE,7,MPI_COMM_WORLD,MPI_STATUS_IGNORE); 
+			//printf("rrr %d\n",actorType);
 	assert(actorType != -1);
 
 	void* msgQueue[AC_MAX_MSG_QUEUE_SIZE];
@@ -95,10 +96,17 @@ static void AC_ActorCode()
 
 
 	MPI_Send(NULL, 0, MPI_INT, 0, 0, MPI_COMM_WORLD);
+	
 	int workerStatus = 1;
 	while (workerStatus) 
 	{
 		workerStatus = workerSleep();
+		// worker received wakeup command
+		if(workerStatus == 1) 
+		{
+			// runs again actor code for the worker.
+			AC_ActorCode(); 	
+		}
 	}
 
 
@@ -164,6 +172,7 @@ void AC_RunSimulation()
 	}
 	else if(statusCode == 1)
 	{
+
 		AC_ActorCode();
 	}
 
@@ -225,4 +234,20 @@ int AC_GetActorId()
 	int myRank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
 	return (myRank);
+}
+
+
+int AC_CreateNewActor(int actorType)
+{
+	int workerId = startWorkerProcess();
+	MPI_Request childRequest;
+	
+	//MPI_Irecv(NULL, 0, MPI_INT, workerId, 0, MPI_COMM_WORLD, &childRequest);
+	//MPI_Waitall(1, &childRequest, MPI_STATUS_IGNORE);
+	//printf("xxxxxxx\n");
+	//printf("====%d\n",workerId);
+	MPI_Ssend(&actorType,1,MPI_INT,workerId,7,MPI_COMM_WORLD);
+
+
+	return workerId;
 }

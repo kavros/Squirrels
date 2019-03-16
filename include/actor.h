@@ -23,7 +23,7 @@ void AC_Finalize();
 int AC_GetActorId();
 
 int AC_GetMSgSize();
-
+int AC_CreateNewActor();
 
 
 
