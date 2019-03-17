@@ -237,17 +237,28 @@ int AC_GetActorId()
 }
 
 
-int AC_CreateNewActor(int actorType)
+void AC_CreateNewActor(int actorType,void* startData)
 {
 	int workerId = startWorkerProcess();
-	MPI_Request childRequest;
+	//MPI_Request childRequest;
 	
 	//MPI_Irecv(NULL, 0, MPI_INT, workerId, 0, MPI_COMM_WORLD, &childRequest);
 	//MPI_Waitall(1, &childRequest, MPI_STATUS_IGNORE);
 	//printf("xxxxxxx\n");
 	//printf("====%d\n",workerId);
 	MPI_Ssend(&actorType,1,MPI_INT,workerId,7,MPI_COMM_WORLD);
-
-
-	return workerId;
+	AC_Bsend(startData,workerId);	
 }
+	
+int AC_GetParentActorId()
+{
+	return getCommandData();
+}
+
+void  AC_GetStartData(void* startData)
+{
+	int parentActorId = AC_GetParentActorId();
+	MPI_Recv( startData, 1, AC_msgDataType, parentActorId, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+}
+
+

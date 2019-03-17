@@ -72,7 +72,6 @@ int 			globalClockActorId;
 
 squirrel sqData;
 cell cellData;
-bool isSquirrelBornFromAnotherSquirrel;
 
 int getActorIdFromCell(int cellNum)
 {
@@ -109,7 +108,6 @@ void resetSquirrelData()
 	sqData.sqState 			= SQUIRREL_IS_HEALTHY;
 	sqData.stepsCnt			= 0;
 	sqData.infectedSteps 	= 0;
-	isSquirrelBornFromAnotherSquirrel = true;
 	isActorInitialized =false;
 }
 int squirrelCode(simulationMsg** queue,int queueSize,int* actorIds)
@@ -119,16 +117,35 @@ int squirrelCode(simulationMsg** queue,int queueSize,int* actorIds)
 	simulationMsg* recvMsg;
 	if(isActorInitialized == false)
 	{
-		if(isSquirrelBornFromAnotherSquirrel == true)
+		if(AC_GetParentActorId() != 0) // if squirrel born from another squirel instead of master
 		{
 			
 			//get parent position
-			/*simulationMsg parentData;
-			AC_Recv(&parentData);
-			sqData.x=parentData.x;
-			sqData.y=parentData.y;
+			simulationMsg parentData;
+			//printf("---%d\n",getCommandData() );
+			bool isParentMsgInsideQueue = false;
+			for(int i=0;i < queueSize; i++){
+				if(actorIds[i] == AC_GetParentActorId())
+				{
+					recvMsg = queue[i];				
+					if(recvMsg->actorType == SQUIRREL )
+					{
+						//printf("parent msg is inside the queue dont wait\n" );
+						sqData.x=recvMsg->x;
+						sqData.y=recvMsg->y;
+						isParentMsgInsideQueue = true;
+					}
+				}
+			}
+	
+			if(isParentMsgInsideQueue == false){
+				AC_GetStartData(&parentData);
+				sqData.x=parentData.x;
+				sqData.y=parentData.y;
+			}
+
 			printf("new squirrel %d generated at (%f,%f) !\n",AC_GetActorId(),sqData.x,sqData.y);
-			isActorInitialized =true;*/
+			isActorInitialized =true;
 
 		}
 		else
@@ -151,6 +168,7 @@ int squirrelCode(simulationMsg** queue,int queueSize,int* actorIds)
 				sqData.populationInflux[sqData.stepsCnt] = sqData.populationInflux[sqData.stepsCnt] + recvMsg->populationInflux;
 				sqData.infectionLevel[sqData.stepsCnt]   = sqData.infectionLevel[sqData.stepsCnt]+recvMsg->infectionLevel;
 				break;
+
 		}
 	}
 	
@@ -206,12 +224,16 @@ int squirrelCode(simulationMsg** queue,int queueSize,int* actorIds)
 		bool willReproduce = willGiveBirth(avgPopulationInflux,&state);
 		if(willReproduce == true)
 		{
-			printf("squirrel will reproduce at (%f,%f) \n",sqData.x,sqData.y);
-			/*int actorId = AC_CreateNewActor(SQUIRREL);
-			simulationMsg childStartPosition;
-			childStartPosition.x = sqData.x;
-			childStartPosition.y = sqData.y;
-			AC_Bsend(&childStartPosition,actorId);*/
+			printf("squirrel %d will reproduce at (%f,%f) \n",AC_GetActorId(),sqData.x,sqData.y);
+
+
+			
+			
+			simulationMsg childStartData;
+			childStartData.x = sqData.x;
+			childStartData.y = sqData.y;
+			AC_CreateNewActor(SQUIRREL,&childStartData);
+			
 		}
 		
 
@@ -514,7 +536,6 @@ int main(int argc, char *argv[])
  		{
  			startData.sqState = SQUIRREL_IS_HEALTHY;
  		}
- 		isSquirrelBornFromAnotherSquirrel = false;
  		//printf("s---------%d\n",AC_GetActorId());
  	}
  	else if(actorId >= (NUM_OF_SQUIRRELS+1) && actorId <= (NUM_OF_SQUIRRELS+NUM_OF_CELLS))
@@ -534,7 +555,6 @@ int main(int argc, char *argv[])
 	
 	if(actorId> NUM_OF_SQUIRRELS+NUM_OF_CELLS+1)
 	{
-		isSquirrelBornFromAnotherSquirrel = true;	
 		startData.actorType = SQUIRREL;
 	}
 

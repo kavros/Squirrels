@@ -20,13 +20,9 @@ void AC_RunSimulation();
 void AC_SetActorTypes(int totalActors,int numOfDiffActorTypes,int* quantityForEachType,int (**func_ptr_foreach_actorType)());
 void AC_SetActorMsgDataType(int msgFields, AC_Datatype* msgDataTypeForEachField, int* blockLen,MPI_Aint* disp);
 void AC_Finalize();
-int AC_GetActorId();
-
-int AC_GetMSgSize();
-int AC_CreateNewActor();
-
-
-
+void  AC_GetStartData(void* startData);
+int AC_GetParentActorId();
+void AC_CreateNewActor(int actorType,void* startData);
 
 #endif /* ACTOR_H_ */
 

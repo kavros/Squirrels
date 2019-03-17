@@ -1,8 +1,9 @@
 #include <stdlib.h>
+#include <stddef.h>
 #include <stdio.h>
 #include "mpi.h"
 #include "pool.h"
-
+#include <string.h>
 // MPI P2P tag to use for command communications, it is important not to reuse this
 #define PP_CONTROL_TAG 16384
 #define PP_PID_TAG 16383
@@ -116,7 +117,7 @@ int startWorkerProcess() {
 		return startAwaitingProcessesIfNeeded(PP_processesAwaitingStart, 0);
 	} else {
 		int workerRank;
-		struct PP_Control_Package out_command = createCommandPackage(PP_STARTPROCESS);
+		struct PP_Control_Package out_command = createCommandPackage(PP_STARTPROCESS);	
 		MPI_Send(&out_command, 1, PP_COMMAND_TYPE, 0, PP_CONTROL_TAG, MPI_COMM_WORLD);
 		// Receive the rank that this worker has been placed on - if you change the default option from aborting when
 		// there are not enough MPI processes then this may be -1
