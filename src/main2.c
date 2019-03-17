@@ -70,6 +70,7 @@ typedef struct globalClock
 	int totalMsgsFromCellsThisMonth;	
 	int numOfAliveSquirrels ;		
 	int numofInfectedSquirrels ;
+	int currentMonth;
 }globalClock;
 
 
@@ -395,7 +396,7 @@ int cellCode(simulationMsg** msgQueue,int queueSize,int* actorIdsQueue)
 void printOutput()
 {
 
-	printf("[Global Clock] The month %d has %d alive and %d infected squirrels\n",currentMonth,gc.numOfAliveSquirrels,gc.numofInfectedSquirrels);
+	printf("[Global Clock] The month %d has %d alive and %d infected squirrels\n",gc.currentMonth,gc.numOfAliveSquirrels,gc.numofInfectedSquirrels);
 	for(int i=0; i <NUM_OF_CELLS; i++)
 	{
 		printf("%d %d %d\n",i,gc.globalClockCellInfo[i][0],gc.globalClockCellInfo[i][1]);
@@ -425,6 +426,7 @@ void initGlobalClock()
 	gc.totalMsgsFromCellsThisMonth = 0;
 	gc.numOfAliveSquirrels = NUM_OF_SQUIRRELS;
 	gc.numofInfectedSquirrels = INITIAL_NUM_OF_INFECTED_SQUIRRELS;
+	gc.currentMonth = 0;
 	isActorInitialized=true;
 }
 
@@ -459,7 +461,7 @@ void sendChangeMonthCmd()
 	AC_Bcast(&sendMsg,AC_GetActorId());
 
 	usleep(50);
-	currentMonth++;
+	gc.currentMonth =gc.currentMonth +1;
 
 }
 
@@ -519,8 +521,8 @@ int globalClockCode(simulationMsg** queue,int queueSize,int* actorIds)
 
 
 
-	bool haveMsgsFromCellsArrived	 = gc.totalMsgsFromCellsThisMonth == (NUM_OF_CELLS);
-	bool isThisTheLastMonth 		 = currentMonth == TOTAL_MONTHS -1;
+	bool haveMsgsFromCellsArrived	 = (gc.totalMsgsFromCellsThisMonth == (NUM_OF_CELLS));
+	bool isThisTheLastMonth 		 = (gc.currentMonth == TOTAL_MONTHS -1);
 	if( ! haveMsgsFromCellsArrived )
 	{
 		return AC_KEEP_ACTOR_ALIVE;
