@@ -34,4 +34,7 @@ void shutdownPool();
 int getCommandData();
 void errorMessage(char*);
 
+
+
+
 #endif /* POOL_H_ */

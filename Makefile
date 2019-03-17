@@ -22,7 +22,7 @@ OFILES3=\
 	$(ODIR)/pool.o\
 	$(ODIR)/actor.o
 
-all: build/squirrels build/testPool	 build/squirrels2
+all: build/testPool	 build/squirrels2
 
 $(ODIR)/%.o: src/%.c 	
 	mkdir -p build/obj

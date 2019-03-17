@@ -23,6 +23,6 @@ void AC_Finalize();
 void  AC_GetStartData(void* startData);
 int AC_GetParentActorId();
 void AC_CreateNewActor(int actorType,void* startData);
-
+int AC_GetActorId();
 #endif /* ACTOR_H_ */
 
