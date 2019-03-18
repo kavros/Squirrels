@@ -83,7 +83,6 @@ typedef struct globalClock
 
 
 simulationMsg 	startData;
-int 			cellNumStart;
 long 			state;
 bool 			isActorInitialized = false;
 
@@ -101,6 +100,7 @@ int getGlobalClockActorId()
 
 int getActorIdFromCell(int cellNum)
 {
+	int cellNumStart = NUM_OF_SQUIRRELS+1;
 	return cellNumStart+cellNum;
 }
 
@@ -639,7 +639,7 @@ int main(int argc, char *argv[])
 		startData.actorType = SQUIRREL;
 	}
 
-	cellNumStart = NUM_OF_SQUIRRELS+1;
+	
 
 	AC_RunSimulation();
 	
