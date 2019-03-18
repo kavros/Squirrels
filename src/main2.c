@@ -85,8 +85,6 @@ typedef struct globalClock
 
 long 			state;
 bool 			isActorInitialized = false;
-
-
 squirrel sqData;
 cell cellData;
 globalClock gc;
@@ -209,23 +207,15 @@ int squirrelCode(simulationMsg** queue,int queueSize,int* actorIds)
 	squirrelStep(sqData.x,sqData.y,&(sqData.x),&(sqData.y),&state);
 	sqData.cell 	= getCellFromPosition(sqData.x,sqData.y);
 	int cellActorId = getActorIdFromCell(sqData.cell);
-	/*if(sqData.isInfected){
-		printf("infected squirrel %d step to actorId %d \n",AC_GetActorId(),cellActorId);
-	}*/
-
 	AC_Bsend(&sendMsg,cellActorId);
-	/*if(sqData.stepsCnt == 0 && currentMonth!=0)
-	{
-		//assert(currentMonth == 0);
-		printf("--------------%d\n",currentMonth );
-	}*/
+	
 
 	sqData.stepsCnt =sqData.stepsCnt+1;
 
-	if(sqData.sqState == SQUIRREL_IS_INFECTED)
+	/*if(sqData.sqState == SQUIRREL_IS_INFECTED)
 	{
 		sqData.infectedSteps++;
-		if(sqData.infectedSteps >= 5000)
+		if(sqData.infectedSteps >= 50)
 		{
 			int die = willDie(&state);
 			if(die == true)
@@ -241,7 +231,7 @@ int squirrelCode(simulationMsg** queue,int queueSize,int* actorIds)
 			}
 		}
 		
-	}
+	}*/
 
 	// decide about state (born,infected)
 	if(sqData.stepsCnt == 50)
@@ -410,7 +400,7 @@ int cellCode(simulationMsg** msgQueue,int queueSize,int* actorIdsQueue)
 	/*if(cellData.currentMonth == TOTAL_MONTHS-1)
 		printf("[CELL %d] will terminate\n",AC_GetActorId());*/
 
-	return cellData.currentMonth == TOTAL_MONTHS-1;
+	return AC_KEEP_ACTOR_ALIVE;
 
 	//return isTerminate();
 	
@@ -422,10 +412,11 @@ int cellCode(simulationMsg** msgQueue,int queueSize,int* actorIdsQueue)
 void printOutput()
 {
 
-	printf("[Global Clock] The month %d has %d alive and %d infected squirrels\n",gc.currentMonth,gc.numOfAliveSquirrels,gc.numofInfectedSquirrels);
+	printf("[Global Clock] Month %d has %d alive and %d infected squirrels\n",gc.currentMonth,gc.numOfAliveSquirrels,gc.numofInfectedSquirrels);
+	printf("[Global Clock] \t Num of cell \t  PopulationInflux \t InfectionLevel\n");
 	for(int i=0; i <NUM_OF_CELLS; i++)
 	{
-		printf("%d %d %d\n",i,gc.globalClockCellInfo[i][0],gc.globalClockCellInfo[i][1]);
+		printf("\t \t %d \t\t %d \t\t\t %d\n",i,gc.globalClockCellInfo[i][0],gc.globalClockCellInfo[i][1]);
 	}
 	printf("\n");
 }
@@ -474,7 +465,7 @@ int globalClockCode(simulationMsg** queue,int queueSize,int* actorIds)
 		sendChangeMonthCmd();
 	}
 	simulationMsg* recvMsg;
-
+	int cellNum;
 	//printf("----- %d\n",AC_GetActorId() );
 	for(int i=0; i < queueSize; i++)
 	{
@@ -484,10 +475,10 @@ int globalClockCode(simulationMsg** queue,int queueSize,int* actorIds)
 			case CELL:
 				//printf("GLOBAL_CLOCK received message form cell %d !\n",getCellNumFromActorId(actorIds[i]));
 				//printf("%d %d",getCellNumFromActorId(actorIds[i]),recvMsg->infectionLevel,recvMsg->populationInflux);
-				gc.globalClockCellInfo[getCellNumFromActorId(actorIds[i])][0]=recvMsg->populationInflux;
-				gc.globalClockCellInfo[getCellNumFromActorId(actorIds[i])][1]=recvMsg->infectionLevel;
-				gc.totalMsgsFromCellsThisMonth = gc.totalMsgsFromCellsThisMonth+1;
-				//printf("Cell\n");
+				cellNum = getCellNumFromActorId(actorIds[i]);
+				gc.globalClockCellInfo[cellNum][0]	= recvMsg->populationInflux;
+				gc.globalClockCellInfo[cellNum][1]	= recvMsg->infectionLevel;
+				gc.totalMsgsFromCellsThisMonth 		= gc.totalMsgsFromCellsThisMonth+1;
 				break;
 			case GLOBAL_CLOCK:
 				assert(0);			
@@ -530,7 +521,7 @@ int globalClockCode(simulationMsg** queue,int queueSize,int* actorIds)
 
 
 	bool haveMsgsFromCellsArrived	 = (gc.totalMsgsFromCellsThisMonth == (NUM_OF_CELLS));
-	bool isThisTheLastMonth 		 = (gc.currentMonth == TOTAL_MONTHS -1);
+	bool isThisTheLastMonth 		 = (gc.currentMonth == TOTAL_MONTHS );
 	if( ! haveMsgsFromCellsArrived )
 	{
 		return AC_KEEP_ACTOR_ALIVE;
