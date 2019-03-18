@@ -1,5 +1,6 @@
 #ifndef ACTOR_H_
 #include "mpi.h"
+#include "pool.h"
 #define ACTOR_H_
 #define AC_EMPTY -1
 #define AC_INT 		MPI_INT
@@ -10,6 +11,14 @@
 
 #define AC_TERMINATE_ACTOR 1
 #define AC_KEEP_ACTOR_ALIVE 0
+
+
+int AC_numActors;
+int AC_msgSizeInBytes;
+int AC_numOfDiffActorTypes;
+int* AC_diffActorsQuantity;
+int (**AC_functPtrs)();
+MPI_Datatype AC_msgDataType;
 
 void AC_Init(int argc, char *argv[]);
 void AC_Bsend(void* sendBuf,int destActorId);

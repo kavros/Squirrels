@@ -2,17 +2,10 @@
 #include <stdio.h>
 #include <string.h>
 #include "mpi.h"
-#include "pool.h"
 #include "actor.h"
 #include <assert.h>
 
 
-int AC_numActors;
-int AC_msgSizeInBytes;
-int AC_numOfDiffActorTypes;
-int* AC_diffActorsQuantity;
-int (**AC_functPtrs)();
-MPI_Datatype AC_msgDataType;
 
 
 
@@ -43,13 +36,22 @@ int AC_Recv(void* event)
 	return status.MPI_SOURCE;
 }
 
-void AC_Bcast(void* event,int source_actroId)
+void AC_Bcast(void* msg,int source_actroId)
 {
-	for(int actroId=1; actroId < AC_numActors; actroId++)
+	int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+	for(int actroId=1; actroId < world_size; actroId++)
 	{
 		if(source_actroId == actroId) continue;
-		AC_Bsend(event,actroId);
+		AC_Bsend(msg,actroId);
 	}
+	/*struct PP_Control_Package out_command ;
+	out_command.command = PP_BCAST;
+	MPI_Ssend(&out_command, 1, MPI_INT, 0, PP_CONTROL_TAG, MPI_COMM_WORLD);
+	MPI_Ssend(msg, 1, AC_msgDataType, 0, 0, MPI_COMM_WORLD);*/
+	
+	//MPI_Send(NULL, 0, MPI_INT, parentId, 0, MPI_COMM_WORLD);
+
 }
 
 
@@ -108,7 +110,6 @@ static void AC_ActorCode()
 			AC_ActorCode(); 	
 		}
 	}
-
 
 }
 
@@ -240,12 +241,7 @@ int AC_GetActorId()
 void AC_CreateNewActor(int actorType,void* startData)
 {
 	int workerId = startWorkerProcess();
-	//MPI_Request childRequest;
-	
-	//MPI_Irecv(NULL, 0, MPI_INT, workerId, 0, MPI_COMM_WORLD, &childRequest);
-	//MPI_Waitall(1, &childRequest, MPI_STATUS_IGNORE);
-	//printf("xxxxxxx\n");
-	//printf("====%d\n",workerId);
+
 	MPI_Ssend(&actorType,1,MPI_INT,workerId,7,MPI_COMM_WORLD);
 	AC_Bsend(startData,workerId);	
 }

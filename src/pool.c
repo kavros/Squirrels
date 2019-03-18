@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
-#include "mpi.h"
 #include "pool.h"
+#include "mpi.h"
 #include <string.h>
 // MPI P2P tag to use for command communications, it is important not to reuse this
 #define PP_CONTROL_TAG 16384
@@ -12,6 +12,7 @@
 #define PP_QuitOnNoProcs 1
 #define PP_IgnoreOnNoProcs 0
 #define PP_DEBUG 0
+
 
 // Example command package data type which can be extended
 static MPI_Datatype PP_COMMAND_TYPE;

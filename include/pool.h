@@ -1,5 +1,7 @@
 #ifndef POOL_H_
 #define POOL_H_
+#include  "mpi.h"
+
 
 // The core process pool command which instructs what to do next
 enum PP_Control_Command {
