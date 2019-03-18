@@ -27,17 +27,18 @@ typedef enum actorType
 
 typedef enum squirrelState
 {
-	SQUIRREL_IS_DEAD = 14,
 	SQUIRREL_IS_INFECTED = 1,
-	SQUIRREL_GIVING_BIRTH =3,
 	SQUIRREL_IS_HEALTHY = 4
 }squirrelState;
 
-typedef enum globalClockCommand
+typedef enum simulationMsgCommands
 {
 	UPDATE_MONTH = 0,
-	TERMINATE_ACTOR =1
-}globalClockCommand;
+	TERMINATE_ACTOR =1,
+	UPDATE_INFECTED_SQUIRRELS=2,
+	UPDATE_DEAD_SQUIRRELS=3,
+	UPDATE_ALIVE_SQUIRRELS=4
+}simulationMsgCommands;
 
 typedef struct simulationMsg
 {
@@ -47,7 +48,7 @@ typedef struct simulationMsg
 	int infectionLevel;
 	float x;  
 	float y; 
-	globalClockCommand gcCommand;
+	simulationMsgCommands command;
 }simulationMsg;
 
 typedef struct squirrel
@@ -177,7 +178,7 @@ int squirrelCode(simulationMsg** queue,int queueSize,int* actorIds)
 		{
 			case GLOBAL_CLOCK:
 				//printf("[SQUIRREL %d]  received termination msg from global clock\n",AC_GetActorId());
-				if(recvMsg->gcCommand == TERMINATE_ACTOR)
+				if(recvMsg->command == TERMINATE_ACTOR)
 				{
 					return AC_TERMINATE_ACTOR;	
 				}
@@ -227,8 +228,8 @@ int squirrelCode(simulationMsg** queue,int queueSize,int* actorIds)
 			{
 
 				//printf("[Squirrel %d] died !\n",AC_GetActorId());
-				sendMsg.sqState = SQUIRREL_IS_DEAD;
 				sendMsg.actorType = SQUIRREL;
+				sendMsg.command = UPDATE_DEAD_SQUIRRELS;
 				//printf("%d\n",globalClockActorId );
 				AC_Bsend(&sendMsg,globalClockActorId);
 				resetSquirrelData();
@@ -261,7 +262,7 @@ int squirrelCode(simulationMsg** queue,int queueSize,int* actorIds)
 			
 			simulationMsg newSquirrelBirth;
 			newSquirrelBirth.actorType = SQUIRREL;
-			newSquirrelBirth.sqState   =SQUIRREL_GIVING_BIRTH;
+			newSquirrelBirth.command   = UPDATE_ALIVE_SQUIRRELS;
 			AC_Bsend(&newSquirrelBirth, globalClockActorId);
 		}
 		
@@ -277,7 +278,7 @@ int squirrelCode(simulationMsg** queue,int queueSize,int* actorIds)
 				sqData.sqState =SQUIRREL_IS_INFECTED;
 				
 				sendMsg.actorType = SQUIRREL;
-				sendMsg.sqState   = SQUIRREL_IS_INFECTED;
+				sendMsg.command   = UPDATE_INFECTED_SQUIRRELS;
 				//printf("[Squirrel %d] is infected\n",AC_GetActorId());
 				AC_Bsend(&sendMsg,globalClockActorId);
 			}
@@ -364,11 +365,11 @@ int cellCode(simulationMsg** msgQueue,int queueSize,int* actorIdsQueue)
 		{
 			case GLOBAL_CLOCK:
 				//printf("actor %d month is %d \n",AC_GetActorId(),currentMonth);
-				if(recvMsg->gcCommand == TERMINATE_ACTOR){
+				if(recvMsg->command == TERMINATE_ACTOR){
 					
 					return TERMINATE_ACTOR;
 				}
-				else if(recvMsg->gcCommand == UPDATE_MONTH)
+				else if(recvMsg->command == UPDATE_MONTH)
 				{
 					sendMsg.actorType = CELL;
 					sendMsg.populationInflux = getPopulationInfluxForLast3Months();
@@ -448,7 +449,7 @@ void sendChangeMonthCmd()
 	//if(cellMsgs < 16)
 	simulationMsg sendMsg;
 	sendMsg.actorType = GLOBAL_CLOCK;
-	sendMsg.gcCommand = UPDATE_MONTH;
+	sendMsg.command = UPDATE_MONTH;
 	//AC_Bcast(&sendMsg,AC_GetActorId());
 	
 	for(int cellNum=0; cellNum < 16; cellNum++)
@@ -457,7 +458,7 @@ void sendChangeMonthCmd()
 		
 		AC_Bsend(&sendMsg,actorId);
 	}
-	//usleep(50);
+	usleep(50);
 	gc.currentMonth =gc.currentMonth +1;
 
 }
@@ -490,18 +491,18 @@ int globalClockCode(simulationMsg** queue,int queueSize,int* actorIds)
 				assert(0);			
 				break;
 			case SQUIRREL:
-				if(recvMsg->sqState == SQUIRREL_IS_DEAD)
+				if(recvMsg->command == UPDATE_DEAD_SQUIRRELS)
 				{
 					//printf("Received msg from dead squirrel %d \n",actorIds[i]);
 					gc.numOfAliveSquirrels = gc.numOfAliveSquirrels-1;
 					gc.numofInfectedSquirrels = gc.numofInfectedSquirrels-1;
 				}
-				else if(recvMsg->sqState == SQUIRREL_IS_INFECTED)
+				else if(recvMsg->command == UPDATE_INFECTED_SQUIRRELS)
 				{
 					//printf("Received msg from infected squirrel %d \n",actorIds[i]);
 					gc.numofInfectedSquirrels=gc.numofInfectedSquirrels+1;
 				}
-				else if(recvMsg->sqState == SQUIRREL_GIVING_BIRTH)
+				else if(recvMsg->command == UPDATE_ALIVE_SQUIRRELS)
 				{
 					gc.numOfAliveSquirrels=gc.numOfAliveSquirrels+1;
 					if(gc.numOfAliveSquirrels > MAX_NUM_OF_SQUIRRELS){
@@ -509,7 +510,7 @@ int globalClockCode(simulationMsg** queue,int queueSize,int* actorIds)
 						//printf("[GLOBAL_CLOCK ERROR] number of squirrels is %d which exceeds the limit of %d \n",gc.numOfAliveSquirrels,MAX_NUM_OF_SQUIRRELS);
 						simulationMsg lastGCMsg;
 						lastGCMsg.actorType = GLOBAL_CLOCK;
-						lastGCMsg.gcCommand = TERMINATE_ACTOR;
+						lastGCMsg.command = TERMINATE_ACTOR;
 						AC_Bcast(&lastGCMsg,AC_GetActorId());
 						return AC_TERMINATE_ACTOR;
 					}
@@ -541,7 +542,7 @@ int globalClockCode(simulationMsg** queue,int queueSize,int* actorIds)
 
 		simulationMsg lastGCMsg;
 		lastGCMsg.actorType = GLOBAL_CLOCK;
-		lastGCMsg.gcCommand = TERMINATE_ACTOR;
+		lastGCMsg.command = TERMINATE_ACTOR;
 		AC_Bcast(&lastGCMsg,AC_GetActorId());
 		printOutput();	
 
@@ -589,7 +590,7 @@ int main(int argc, char *argv[])
 	simulationMsgDisp[3] = offsetof(simulationMsg, infectionLevel);
 	simulationMsgDisp[4] = offsetof(simulationMsg, x);
 	simulationMsgDisp[5] = offsetof(simulationMsg, y);
-	simulationMsgDisp[6] = offsetof(simulationMsg, gcCommand);
+	simulationMsgDisp[6] = offsetof(simulationMsg, command);
 	
 
 
