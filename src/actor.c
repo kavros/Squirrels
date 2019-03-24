@@ -45,13 +45,7 @@ void AC_Bcast(void* msg,int source_actroId)
 		if(source_actroId == actroId) continue;
 		AC_Bsend(msg,actroId);
 	}
-	/*struct PP_Control_Package out_command ;
-	out_command.command = PP_BCAST;
-	MPI_Ssend(&out_command, 1, MPI_INT, 0, PP_CONTROL_TAG, MPI_COMM_WORLD);
-	MPI_Ssend(msg, 1, AC_msgDataType, 0, 0, MPI_COMM_WORLD);*/
 	
-	//MPI_Send(NULL, 0, MPI_INT, parentId, 0, MPI_COMM_WORLD);
-
 }
 
 

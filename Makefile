@@ -20,16 +20,21 @@ OFILES3=\
 	$(ODIR)/squirrel-functions.o\
 	$(ODIR)/main2.o\
 	$(ODIR)/pool.o\
-	$(ODIR)/actor.o
+	$(ODIR)/actor.o\
+	$(ODIR)/argtable3.o
 
 all: build/testPool	 build/squirrels2
+
+qsub:
+	qsub scripts/squirrels.pbs
+
+run:
+	mpirun -n 220 ./build/squirrels2
 
 $(ODIR)/%.o: src/%.c 	
 	mkdir -p build/obj
 	$(CC) $(CFLAGS) -c $< -o $@
 
-build/squirrels: $(OFILES)
-	$(CC) $(CFLAGS)  $^ -o $@
 
 build/squirrels2:$(OFILES3)
 	$(CC) $(CFLAGS)  $^ -o $@

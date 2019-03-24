@@ -5,16 +5,17 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include "argtable3.h"
 #include "squirrel-functions.h"
 #include "pool.h"
 #include "actor.h"
 
-
+#define TOTAL_MONTHS  24
 #define NUM_OF_CELLS  16
-#define MAX_NUM_OF_SQUIRRELS  200
-#define NUM_OF_SQUIRRELS 34
-#define TOTAL_MONTHS 24
-#define INITIAL_NUM_OF_INFECTED_SQUIRRELS 4
+int MAX_NUM_OF_SQUIRRELS = 200;
+int NUM_OF_SQUIRRELS = 34;
+
+int INITIAL_NUM_OF_INFECTED_SQUIRRELS = 4;
 
 
 
@@ -573,12 +574,113 @@ int globalClockCode(simulationMsg** queue,int queueSize,int* actorIds)
 	return AC_KEEP_ACTOR_ALIVE ;
 }
 
+int initArgTable(int argc, char *argv[],int actorId)
+{
+	//struct arg_lit *verb, *help, *version;
+	struct arg_lit *help;
+	struct arg_int *limit,*squirrels,*infection;
+	//struct arg_file *o, *file;
+	struct arg_end *end;
+
+	void *argtable[] = {
+	    help    = arg_litn(NULL, "help", 0, 1, "display this help and exit"),
+	    //version = arg_litn(NULL, "version", 0, 1, "display version info and exit"),
+	    limit   = arg_intn("l", "level", "<n>", 0, 1, "MAX_NUM_OF_SQUIRRELS"),
+	    /*cells   = arg_intn("c", "cells", "<n>", 0, 1, "NUM_OF_CELLS"),*/
+	    squirrels   = arg_intn("s", "squirrels", "<n>", 0, 1, "NUM_OF_SQUIRRELS"),
+	    infection   = arg_intn("i", "infection", "<n>", 0, 1, "INITIAL_NUM_OF_INFECTED_SQUIRRELS"),
+	    /*months   = arg_intn("m", "months", "<n>", 0, 1, "TOTAL_MONTHS"),*/
+
+	    //verb    = arg_litn("v", "verbose", 0, 1, "verbose output"),
+	    //o       = arg_filen("o", NULL, "myfile", 0, 1, "output file"),
+	    //file    = arg_filen(NULL, NULL, "<file>", 1, 100, "input files"),
+	    end     = arg_end(20),
+	};
+
+	int exitcode = 0;
+    char progname[] = "squirrels2";
+    
+    int nerrors;
+    nerrors = arg_parse(argc,argv,argtable);
+
+    /* special case: '--help' takes precedence over error reporting */
+    if (help->count > 0)
+    {
+    	if(actorId == 0)
+    	{
+	        printf("Usage: %s", progname);
+	        arg_print_syntax(stdout, argtable, "\n");
+	        printf("Demonstrate command-line parsing in argtable3.\n\n");
+	        arg_print_glossary(stdout, argtable, "  %-25s %s\n");
+    	}
+        exitcode = 1;
+        goto exit;
+    }
+
+    /* If the parser returned any errors then display them and exit */
+    if (nerrors > 0)
+    {
+        /* Display the error details contained in the arg_end struct.*/
+        if(actorId == 0)
+        {
+        	arg_print_errors(stdout, end, progname);
+        	printf("Try '%s --help' for more information.\n", progname);
+        }
+        exitcode = 1;
+
+        goto exit;
+    }
+
+    if(limit->count > 0)
+    {
+		 MAX_NUM_OF_SQUIRRELS= limit->ival[0];
+    }
+    if(squirrels->count > 0)
+    {
+    	NUM_OF_SQUIRRELS = squirrels->ival[0];
+    }
+    if(infection->count > 0)
+    {
+    	INITIAL_NUM_OF_INFECTED_SQUIRRELS = infection->ival[0];
+    }
+
+
+	if(MAX_NUM_OF_SQUIRRELS <= NUM_OF_SQUIRRELS)
+	{
+		if(actorId == 0) printf("[ERROR]  MAX_NUM_OF_SQUIRRELS <= NUM_OF_SQUIRRELS \n");
+		exitcode =1;
+		goto exit;
+	}
+
+    /*if(actorId == 0)
+    {
+		printf("maximum number of squirrels is %d\n",MAX_NUM_OF_SQUIRRELS );
+		printf("number of squirrels are %d\n",NUM_OF_SQUIRRELS );
+		printf("infected squirrels are %d\n",INITIAL_NUM_OF_INFECTED_SQUIRRELS );
+    }*/
+
+exit:
+    /* deallocate each non-null entry in argtable[] */
+    arg_freetable(argtable, sizeof(argtable) / sizeof(argtable[0]));
+
+    return exitcode;
+
+}
 
 int main(int argc, char *argv[])
 {
 
 	AC_Init(argc,argv);
+	
 	int actorId = AC_GetActorId();
+	int val = initArgTable(argc,argv,actorId);
+	if(val == 1)
+	{
+
+		AC_Finalize();
+		return -1;
+	}
+
 	//printf("my rank = %d \n",actorId);
 	long seed = -1-actorId;
 	state =seed;
