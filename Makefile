@@ -28,6 +28,9 @@ all: build/testPool	 build/squirrels2
 qsub:
 	qsub scripts/squirrels.pbs
 
+validation:
+	./scripts/validation.sh
+
 run:
 	mpirun -n 220 ./build/squirrels2
 
