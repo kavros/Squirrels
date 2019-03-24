@@ -21,7 +21,12 @@ OFILES3=\
 	$(ODIR)/main2.o\
 	$(ODIR)/pool.o\
 	$(ODIR)/actor.o\
-	$(ODIR)/argtable3.o
+	$(ODIR)/argtable3.o\
+	$(ODIR)/squirrel.o\
+	$(ODIR)/cell.o\
+	$(ODIR)/globalClock.o\
+	$(ODIR)/simulation.o\
+
 
 all: build/testPool	 build/squirrels2
 
@@ -34,9 +39,10 @@ validation:
 run:
 	mpirun -n 220 ./build/squirrels2
 
-$(ODIR)/%.o: src/%.c 	
+$(ODIR)/%.o: src/%.c 
 	mkdir -p build/obj
 	$(CC) $(CFLAGS) -c $< -o $@
+
 
 
 build/squirrels2:$(OFILES3)
