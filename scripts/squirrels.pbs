@@ -1,0 +1,14 @@
+#PBS -A d167-s1891388
+#PBS -j oe
+#PBS -l walltime=00:01:00
+#PBS -l place=scatter:excl
+#PBS -l select=1:ncpus=72
+
+
+
+
+module load mpt
+module load intel-compilers-17
+
+
+mpiexec_mpt -n 55  ../build/squirrels2  2>&1
