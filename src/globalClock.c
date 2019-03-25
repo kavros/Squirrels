@@ -166,8 +166,10 @@ int globalClockCode(simulationMsg** queue,int queueSize,int* actorIds)
 	
 	if(isThisTheLastMonth)
 	{
-		// At the last month, we send a termination message
-		// in every actor and we terminate the global clock.
+		/** 
+		* At the last month, we send a termination message
+		* in every actor and we terminate the global clock.
+		**/
 		simulationMsg lastGCMsg;
 		lastGCMsg.actorType = GLOBAL_CLOCK;
 		lastGCMsg.command = TERMINATE_ACTOR;
