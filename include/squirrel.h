@@ -25,18 +25,25 @@ typedef struct squirrel
 	enum squirrelState sqState;
 	float x;
 	float y;
-	int cell;
-	int stepsCnt;
-	int populationInflux[50]; 		
-	int infectionLevel[50];	
+	int cell;						
+	int stepsCnt;					
+	int populationInflux[50]; 		// Holds the populationInflux for the last 50 steps.
+	int infectionLevel[50];			// Holds the infectionLevel for the last 50 steps.
 	int infectedSteps;	
 }squirrel;
 
+// Evey squirrels use this value in order to keep state.
 squirrel sqData;
 
-
+/**
+* Initialize values inside sqData global variable.
+**/
 void initSquirrelData(squirrelState st);
-void resetSquirrelData();
+
+/**
+* This function is passed to the framework. 
+* Every squirrel use this function to implement the simulation logic.
+**/
 int squirrelCode(simulationMsg** queue,int queueSize,int* actorIds);
 
 #endif
