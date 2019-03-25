@@ -111,17 +111,18 @@ int cellCode(simulationMsg** msgQueue,int queueSize,int* actorIdsQueue)
 			case SQUIRREL:
 				
 				// Update cell.
-				cellData.populationInflux[cellData.currentMonth] = cellData.populationInflux[cellData.currentMonth]+1;
+				cellData.populationInflux[cellData.currentMonth] 	= cellData.populationInflux[cellData.currentMonth]+1;
 				if(recvMsg->sqState == SQUIRREL_IS_INFECTED)
 				{
-					cellData.infectionLevel[cellData.currentMonth]   = cellData.infectionLevel[cellData.currentMonth]+1;
+					cellData.infectionLevel[cellData.currentMonth]  = cellData.infectionLevel[cellData.currentMonth]+1;
 				}
 				
 				// Sends populationInflux and infection level values to squirrel.
-				sendMsg.actorType = CELL;
-				sendMsg.populationInflux = getPopulationInfluxForLast3Months();
-				sendMsg.infectionLevel = getInfectionLevelForLast2Months();			
-				destActorId =actorIdsQueue[i];
+				sendMsg.actorType 			= CELL;
+				sendMsg.populationInflux 	= getPopulationInfluxForLast3Months();
+				sendMsg.infectionLevel 		= getInfectionLevelForLast2Months();			
+				destActorId 				= actorIdsQueue[i];
+			
 				AC_Bsend(&sendMsg,destActorId);
 				break;
 
