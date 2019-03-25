@@ -6,12 +6,18 @@ int getGlobalClockActorId()
 	return NUM_OF_SQUIRRELS+NUM_OF_CELLS+1;
 }
 
+/**
+* Returns the actor id based on the cell number.
+**/
 int getActorIdFromCell(int cellNum)
 {
 	int cellNumStart = NUM_OF_SQUIRRELS+1;
 	return cellNumStart+cellNum;
 }
 
+/**
+* Returns the cell number based on actor id.
+**/
 int getCellNumFromActorId(int actorId)
 {
 	return actorId - NUM_OF_SQUIRRELS -1;
