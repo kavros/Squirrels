@@ -11,9 +11,15 @@
 #include "cell.h"
 #include "globalClock.h"
 
+/**
+* We can change the 3 values below using 
+* the appropriate flags when we run the programm.
+* For more information run the program using -h flag.
+**/
 int MAX_NUM_OF_SQUIRRELS = 200;
 int NUM_OF_SQUIRRELS = 34;
 int INITIAL_NUM_OF_INFECTED_SQUIRRELS = 4;
+
 bool 			isActorInitialized = false;
 long 			state;
 
