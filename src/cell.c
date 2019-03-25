@@ -12,7 +12,9 @@ void initCellData()
 	cellData.currentMonth = 0;
 }
 
-
+/**
+* Returns the population influx for the last 3 months.
+**/
 int  getPopulationInfluxForLast3Months()
 {
 	int populationInflux = 0;
@@ -41,6 +43,9 @@ int  getPopulationInfluxForLast3Months()
 	return populationInflux;
 }
 
+/**
+* Returns the infection level for the last 2 months.
+**/
 int getInfectionLevelForLast2Months()
 {
 	int infectionLevel = 0;
@@ -60,8 +65,6 @@ int getInfectionLevelForLast2Months()
 
 int cellCode(simulationMsg** msgQueue,int queueSize,int* actorIdsQueue)
 {
-	//printf("CELL\n" );
-
 	
 	simulationMsg sendMsg;
 	int destActorId;
@@ -71,8 +74,13 @@ int cellCode(simulationMsg** msgQueue,int queueSize,int* actorIdsQueue)
 		recvMsg = msgQueue[i];
 		switch(recvMsg->actorType)
 		{
+			/**
+			* The cell receive two type of messages from the globalclock.
+			* 	1) A termination message that instruct process to terminate immediatelly.
+			*   2) A message that instruct cell to update the current month variable.	
+			* In the second case the cell sends population influx and infection level values to global clock.
+			**/
 			case GLOBAL_CLOCK:
-				//printf("actor %d month is %d \n",AC_GetActorId(),currentMonth);
 				if(recvMsg->command == TERMINATE_ACTOR){
 					
 					return TERMINATE_ACTOR;
@@ -80,13 +88,13 @@ int cellCode(simulationMsg** msgQueue,int queueSize,int* actorIdsQueue)
 				else if(recvMsg->command == UPDATE_MONTH)
 				{
 					//printf("[CELL %d] received update month command\n",AC_GetActorId() );
+					// Sends population influx and infection level values to global clock.
 					sendMsg.actorType = CELL;
 					sendMsg.populationInflux = getPopulationInfluxForLast3Months();
 					sendMsg.infectionLevel   = getInfectionLevelForLast2Months();
 					destActorId =actorIdsQueue[i]; 
-					//if(currentMonth == 4) printf("%d\n",cellData.infectionLevel[currentMonth-2] );
+					
 					AC_Bsend(&sendMsg,destActorId);	
-					//printf("cell %d send msg to GC p:%d i:%d \n",getCellNumFromActorId(AC_GetActorId()),sendMsg.populationInflux,sendMsg.infectionLevel);
 					cellData.currentMonth = cellData.currentMonth+1;
 					assert(cellData.currentMonth>=0 && cellData.currentMonth <= TOTAL_MONTHS);
 				}
@@ -95,35 +103,33 @@ int cellCode(simulationMsg** msgQueue,int queueSize,int* actorIdsQueue)
 					assert(0);
 				}
 				break;
+			/**
+			* When a cell receive a message from a squirrel
+			* updates the populationInflux and infection level
+			* and sends both values to squirrel.
+			**/	
 			case SQUIRREL:
 				
+				// Update cell.
 				cellData.populationInflux[cellData.currentMonth] = cellData.populationInflux[cellData.currentMonth]+1;
 				if(recvMsg->sqState == SQUIRREL_IS_INFECTED)
 				{
 					cellData.infectionLevel[cellData.currentMonth]   = cellData.infectionLevel[cellData.currentMonth]+1;
 				}
 				
-
+				// Sends populationInflux and infection level values to squirrel.
 				sendMsg.actorType = CELL;
 				sendMsg.populationInflux = getPopulationInfluxForLast3Months();
-				sendMsg.infectionLevel = getInfectionLevelForLast2Months();
-				//if(sendMsg.infectionLevel != 0)printf("------%d\n",sendMsg.infectionLevel);
-
+				sendMsg.infectionLevel = getInfectionLevelForLast2Months();			
 				destActorId =actorIdsQueue[i];
-				//if(recvMsg->isInfected )printf("cell %d received SQUIRREL %d \n",AC_GetActorId(),destActorId);
-				//printf("---- %d \n",recvMsg->command);
 				AC_Bsend(&sendMsg,destActorId);
 				break;
 
 		}
 	
 	}
-	/*if(cellData.currentMonth == TOTAL_MONTHS-1)
-		printf("[CELL %d] will terminate\n",AC_GetActorId());*/
-
-	return AC_KEEP_ACTOR_ALIVE;
-
-	//return isTerminate();
 	
+
+	return AC_KEEP_ACTOR_ALIVE;	
 }
 
