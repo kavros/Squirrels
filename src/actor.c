@@ -5,9 +5,9 @@
 #include "actor.h"
 #include <assert.h>
 
-
-
-
+void* msgQueue[AC_MAX_MSG_QUEUE_SIZE];
+void* msg;
+void* buf;
 
 
 void AC_Init(int argc, char *argv[])
@@ -15,13 +15,17 @@ void AC_Init(int argc, char *argv[])
 	MPI_Init(&argc,&argv);
 }
 
+
 void AC_Bsend(void* sendBuf,int destActorId)
 {
 	int ret = MPI_Bsend( sendBuf, 1, AC_msgDataType, destActorId, 0, MPI_COMM_WORLD );
-	//MPI_Ssend( sendBuf, 1, AC_msgDataType, destActorId, 0, MPI_COMM_WORLD );
 	if(ret != MPI_SUCCESS ) errorMessage("MPI_Bsend failed");
 }
 
+/**
+* Internal fuction that is used only from framework in order to 
+* check if there any message in the MPI msg queue.
+**/
 int AC_Iprobe(int* outstanding)
 {
 	MPI_Status status;
@@ -29,6 +33,10 @@ int AC_Iprobe(int* outstanding)
 	return status.MPI_SOURCE;
 }
 
+/**
+* Internal fuction that is used only from framework for
+* receiving and adding messages to actors queue.
+**/
 int AC_Recv(void* event)
 {
 	MPI_Status status;
@@ -36,6 +44,9 @@ int AC_Recv(void* event)
 	return status.MPI_SOURCE;
 }
 
+/**
+* Sends a message to all the process except the sender.
+**/
 void AC_Bcast(void* msg,int source_actroId)
 {
 	int world_size;
@@ -48,17 +59,19 @@ void AC_Bcast(void* msg,int source_actroId)
 	
 }
 
-
-
+/**
+* Every actor use this function in order to receive and handle the messages from 
+* other actors. 
+**/
 static void AC_ActorCode()
 {
 	int actorType=-1;
-	MPI_Recv(&actorType,1,MPI_INT,MPI_ANY_SOURCE,7,MPI_COMM_WORLD,MPI_STATUS_IGNORE); 
-			//printf("rrr %d\n",actorType);
+	// Receive a message from the master of the poll that determines the type of actor.
+	MPI_Recv(&actorType,1,MPI_INT,MPI_ANY_SOURCE,7,MPI_COMM_WORLD,MPI_STATUS_IGNORE); 	
 	assert(actorType != -1);
 
-	void* msgQueue[AC_MAX_MSG_QUEUE_SIZE];
-	void* msg = malloc(AC_msgSizeInBytes);
+	// Alocate space for message and message queue.
+	msg = malloc(AC_msgSizeInBytes);
 	for(int i=0; i < AC_MAX_MSG_QUEUE_SIZE; i++)
 	{
 		msgQueue[i] = malloc(AC_msgSizeInBytes);
@@ -67,46 +80,65 @@ static void AC_ActorCode()
 	int actorIdQueue[AC_MAX_MSG_QUEUE_SIZE];
 	int msgsInQueueCnt			= 0;
 	int terminate 				= 0;
+	/**
+	* Actors receive messages until there are no outstanding messages inside the queue
+	* or queue is full. 
+	**/
 	do
 	{
 		int outstanding =0;
 		AC_Iprobe(&outstanding);
 		if(!outstanding || msgsInQueueCnt == AC_MAX_MSG_QUEUE_SIZE-1)
 		{
-			//printf("%------d\n",msgsInQueueCnt );
-			
+						
+			/**
+			* Calls the appropriate fuction based on the actor type.
+			* For example if the actor is a squirrel then it will call the SquirelCode function.
+			**/
 			terminate = (*AC_functPtrs[actorType])(msgQueue,msgsInQueueCnt,actorIdQueue);
-			msgsInQueueCnt = 0;
-			//terminate = 1;
+			msgsInQueueCnt = 0;			
 		}
 		else
-		{
+		{	
 			int sourceActorId = AC_Recv(msg);
+			/**
+			* Copy message inside the queue in order to continue receive messages
+			* from others.
+			**/
 			memcpy((msgQueue[msgsInQueueCnt]),msg,AC_msgSizeInBytes);
+			/**
+			* Save the actor ids in an array which passed to the actors allong with 
+			* the messages in order to allow them to reply if they want.
+			**/
 			actorIdQueue[msgsInQueueCnt] = sourceActorId;
 			msgsInQueueCnt++;
-			//printf("+++++%d\n",msgsInQueueCnt );
 		}
 		
 	}while(terminate != 1);
 
-
+	// Informs master that the actor finish.
 	MPI_Send(NULL, 0, MPI_INT, 0, 0, MPI_COMM_WORLD);
 	
 	int workerStatus = 1;
 	while (workerStatus) 
 	{
 		workerStatus = workerSleep();
-		// worker received wakeup command
+		// A worker received wakeup command
 		if(workerStatus == 1) 
 		{
-			// runs again actor code for the worker.
+			// A new actor have been born.
 			AC_ActorCode(); 	
 		}
 	}
+	
 
 }
 
+/**
+* The master of the pool use this function inorder to 
+* 1) wake up the actors
+* 2) detect when every one is finish.
+**/
 static void AC_PoolMaster()
 {
 	
@@ -114,6 +146,7 @@ static void AC_PoolMaster()
 	MPI_Request initialWorkerRequests[AC_numActors];
 	
 	int cnt=0;
+	// Wake up all the actors.
 	for (int actorType=0; actorType < AC_numOfDiffActorTypes; actorType++)
 	{
 		for(int j=0; j< AC_diffActorsQuantity[actorType]; j++ )
@@ -123,12 +156,15 @@ static void AC_PoolMaster()
 			MPI_Irecv(NULL, 0, MPI_INT, workerPid, 0, MPI_COMM_WORLD, &initialWorkerRequests[cnt]);
 			
 			MPI_Ssend(&actorType,1,MPI_INT,workerPid,7,MPI_COMM_WORLD);
+
 			cnt++;
 	
 		}
 	}
 	int masterStatus = masterPoll();
 	int returnCode;
+
+	// Pool master stay inside this loop untill all workers finish.
 	while (masterStatus) {
 		masterStatus=masterPoll();
 		for (int i=0;i< (AC_numActors);i++) {
@@ -137,7 +173,6 @@ static void AC_PoolMaster()
 				MPI_Test(&initialWorkerRequests[i], &returnCode, MPI_STATUS_IGNORE);
 				if (returnCode){
 					activeWorkers--;	
-					//printf("++++++++++Active workers now are %d \n",activeWorkers);
 				} 
 
 			}
@@ -149,8 +184,6 @@ static void AC_PoolMaster()
 		}
 	}
 	
-    //MPI_Type_free(&squirrelDataType);
-
 
 }
 
@@ -178,22 +211,23 @@ void AC_RunSimulation()
 void AC_SetActorTypes(int totalActors,int numOfDiffActorTypes,int* quantityForEachType,int (**func_ptr_foreach_actorType)())
 {
 	int expected_total_actors=0;
+
+	// Check that the the total quantity of different actors
+	// is equal with the total actors.
 	for(int i=0; i<numOfDiffActorTypes; i++)
 	{
 		expected_total_actors += quantityForEachType[i];
 	}
 	assert(expected_total_actors == totalActors);
+
 	AC_numActors = totalActors;
 	AC_functPtrs = func_ptr_foreach_actorType;
     AC_numOfDiffActorTypes = numOfDiffActorTypes;
     AC_diffActorsQuantity = quantityForEachType;
-
-    //create an array that maps actor type to rank
 }
-
-void AC_SetActorMsgDataType(int msgFields, AC_Datatype* msgDataTypeForEachField, int* blockLen,MPI_Aint* disp)
+ 
+void AC_SetActorMsgDataType(int msgFields, AC_Datatype* msgDataTypeForEachField, int* blockLen,AC_Aint* disp)
 {
-	//cell
     MPI_Datatype* actorMsgTypes 	= msgDataTypeForEachField;
     int* actorMsgBlockLen 	  		= blockLen;
     MPI_Aint* actoMsgDisp 			= disp;
@@ -204,26 +238,37 @@ void AC_SetActorMsgDataType(int msgFields, AC_Datatype* msgDataTypeForEachField,
     int bufSize,msgSize;
     MPI_Pack_size( 1, AC_msgDataType, MPI_COMM_WORLD, &msgSize );
     bufSize = AC_MAX_MSG_QUEUE_SIZE *msgSize;
-    int* buf = (int *)malloc( bufSize );
+    buf = (void*)malloc( bufSize );
     MPI_Buffer_attach( buf, bufSize );
 
     AC_msgSizeInBytes =0 ;
+
+    // Calculates the message size.
     for(int i=0; i<msgFields;i++)
     {
     	AC_msgSizeInBytes += sizeof(msgDataTypeForEachField[i]);
     }
     
 }
-int AC_GetMSgSize()
-{
-	return AC_msgSizeInBytes;
-}
 
+/**
+* Deallocate dynamically allocated arrays and finialize MPI.
+**/
 void AC_Finalize()
 {
+	for(int i=0; i < AC_MAX_MSG_QUEUE_SIZE; i++)
+	{
+		free(msgQueue[i]);	
+	}
+	free(msg);
+	free(buf);
+	MPI_Type_free(&AC_msgDataType);
 	MPI_Finalize();
 }
 
+/**
+* Actors id is the same as MPI rank.
+**/
 int AC_GetActorId()
 {
 	int myRank;
@@ -231,24 +276,17 @@ int AC_GetActorId()
 	return (myRank);
 }
 
-
+/**
+* An actor calls this function in order to create a new actor.
+**/
 void AC_CreateNewActor(int actorType,void* startData)
 {
 	int workerId = startWorkerProcess();
-
-	MPI_Ssend(&actorType,1,MPI_INT,workerId,7,MPI_COMM_WORLD);
 	AC_Bsend(startData,workerId);	
+	MPI_Ssend(&actorType,1,MPI_INT,workerId,7,MPI_COMM_WORLD);
 }
 	
 int AC_GetParentActorId()
 {
 	return getCommandData();
 }
-
-void  AC_GetStartData(void* startData)
-{
-	int parentActorId = AC_GetParentActorId();
-	MPI_Recv( startData, 1, AC_msgDataType, parentActorId, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
-}
-
-
