@@ -23,6 +23,55 @@ int INITIAL_NUM_OF_INFECTED_SQUIRRELS = 4;
 bool 			isActorInitialized = false;
 long 			state;
 
+void initialiseSimulation()
+{
+	/*
+	* Every actor has an actor id which use for many reasons (ex. initialization).
+	* Notice that the framework uses the actorId=0 internal so
+	* users need to initializate their actors starting from actor id equals to 1.
+	*/
+	int actorId = AC_GetActorId();
+
+	// Initialize random number generator.
+	long seed = -1-actorId;
+	state =seed;
+	initialiseRNG(&seed);
+
+	/**
+	* Initialize start data for each actor.
+	**/
+	if(actorId >=1 && actorId <= NUM_OF_SQUIRRELS)
+	{
+		// Initialize healthy and infected squirrels.
+ 		if(actorId <= INITIAL_NUM_OF_INFECTED_SQUIRRELS)
+ 		{
+ 			
+ 			initSquirrelData( SQUIRREL_IS_INFECTED);
+ 		}
+ 		else
+ 		{
+ 			initSquirrelData( SQUIRREL_IS_HEALTHY);
+ 		}
+ 	}
+ 	else if(actorId >= (NUM_OF_SQUIRRELS+1) && actorId <= (NUM_OF_SQUIRRELS+NUM_OF_CELLS))
+ 	{
+ 		// Initialize cells.
+ 		initCellData(); 		
+ 	}
+ 	
+ 	
+	
+	/**
+	* The remaining actors are initialized as squirrels 
+	* because we will possibly use the when a squirrel gives a birth.
+	**/
+	if(actorId > NUM_OF_SQUIRRELS+NUM_OF_CELLS+1)
+	{
+		initSquirrelData( SQUIRREL_IS_HEALTHY);
+		isActorInitialized = false;
+	}
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -47,10 +96,8 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	// Initialize random number generator.
-	long seed = -1-actorId;
-	state =seed;
-	initialiseRNG(&seed);
+	// Initialize squirrels, cells and global clock.
+	initialiseSimulation();
 
 	/**
 	* Initialize and pass to the framework:
@@ -90,42 +137,6 @@ int main(int argc, char *argv[])
 	AC_SetActorMsgDataType(msgFields, msgDataTypeForEachField,blockLen,simulationMsgDisp);
 	
 
-
-	/**
-	* Initialize start data for each actor.
-	**/
-	if(actorId >=1 && actorId <= NUM_OF_SQUIRRELS)
-	{
-		// Initialize healthy and infected squirrels.
- 		if(actorId <= INITIAL_NUM_OF_INFECTED_SQUIRRELS)
- 		{
- 			
- 			initSquirrelData( SQUIRREL_IS_INFECTED);
- 		}
- 		else
- 		{
- 			initSquirrelData( SQUIRREL_IS_HEALTHY);
- 		}
- 	}
- 	else if(actorId >= (NUM_OF_SQUIRRELS+1) && actorId <= (NUM_OF_SQUIRRELS+NUM_OF_CELLS))
- 	{
- 		// Initialize cells.
- 		initCellData(); 		
- 	}
- 	
- 	
-	
-	/**
-	* The remaining actors are initialized as squirrels 
-	* because we will possibly use the when a squirrel gives a birth.
-	**/
-	if(actorId > NUM_OF_SQUIRRELS+NUM_OF_CELLS+1)
-	{
-		initSquirrelData( SQUIRREL_IS_HEALTHY);
-		isActorInitialized = false;
-	}
-
-	
 	/**
 	* Starts simulation.
 	* It is important to mention here that actors start
