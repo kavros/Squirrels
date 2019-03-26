@@ -69,7 +69,10 @@ void AC_Finalize();
 int  AC_GetParentActorId();
 
 /**
-* An actor call this function whenever wants a new actor.
+* An actor call this function whenever wants to crete a new actor.
+* Using this function a parent  actor is able to:
+*	1) select the type of child actor
+*	2) send start data to the child actor.
 **/
 void AC_CreateNewActor(int actorType,void* startData);
 

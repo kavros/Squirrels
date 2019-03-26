@@ -139,7 +139,7 @@ static void AC_ActorCode()
 * 1) wake up the actors
 * 2) detect when every one is finish.
 **/
-static void AC_PoolMaster()
+void AC_PoolMaster()
 {
 	
 	int activeWorkers=0;
