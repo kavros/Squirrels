@@ -1,14 +1,85 @@
-#PBS -A d167-s1891388
+
+
+# This is a simple template script to run batch jobs on Cirrus at EPCC
+#
+# You only have to change two things to run an MPI program with it:
+#
+# 1) Make a copy of the script with the same name as your MPI executable,
+#    eg if the executable is 'myjob' then type: cp cirrusmpi.pbs myjob.pbs
+#
+# 2) Set the variable "NPROC" appropriately (and "select" if NPROC > 36),
+#    and your job will run using NPROC MPI processes.
+#
+# To run: qsub myjob.pbs
+# For supervised practical sessions there may be a queue reserved for you.
+#
+# All screen output (stdout and stderr) will appear in a file called
+# myjob.pbs.oXXXXX, where XXXXX is the job number assigned at submit time.
+#
+# David Henty, EPCC, 18/09/2016
+#
+
+#PBS -A d167
 #PBS -j oe
 #PBS -l walltime=00:01:00
-#PBS -l place=scatter:excl
-#PBS -l select=1:ncpus=72
+#PBS -l place=excl
+#PBS -l select=3:ncpus=36
 
+#----------------------------------------------------------------------#
+# You should only have to change the following parameter NPROC, unless #
+# running on more than 36 processes when "select=1" must be increased  #
+# The variable "select" should be set equal to the number of nodes     #
+# A node has 36 physical cores but we set ncpus=72 due to hyperthreads #
+#----------------------------------------------------------------------#
 
+NPROC=108
 
+#------------------------------------------------------------------------#
+# You should not have to edit below here for simple MPI jobs             #
+# This assumes you are using the SGI MPI toolkit and the Intel compilers #
+#------------------------------------------------------------------------#
 
 module load mpt
 module load intel-compilers-17
 
+cd $PBS_O_WORKDIR
 
-mpiexec_mpt -n 55  ../build/squirrels2  2>&1
+MPIPROG=./build/squirrels2
+MPISIZE=$NPROC
+
+# Spread the processes as evenly as possible across the nodes
+
+CPN=36                                     # Cores Per Node (physical)
+NNODE=$( wc -l < $PBS_NODEFILE )           # nodes reserved
+PPN=$(( (MPISIZE + NNODE - 1) / NNODE ))   # Processes Per Node
+
+# Ensure we place a maximum of 36 processes per node to avoid hyperthreads
+
+if [ $PPN -gt $CPN ]
+then
+    NMIN=$(( (MPISIZE + CPN - 1) / CPN ))
+
+    echo "Error: for $MPISIZE processes you must select at least $NMIN nodes"
+
+    exit 1
+fi
+
+# Ensure that number of MPI processes is a multiple of number of nodes
+
+if [ $MPISIZE -ne $(( NNODE * PPN )) ]
+then
+    echo "Error: NPROC=$NPROC must be a multiple of number of nodes=$NNODE"
+    exit 1
+fi
+
+echo '--------------------------------------------------------------------------------'
+
+echo 'Running' $MPIPROG 'on' $MPISIZE 'processes over' $NNODE 'node(s)'
+echo 'Issuing command: mpiexec_mpt -n' $MPISIZE '-ppn' $PPN ./$MPIPROG
+echo 'Started at' `date`
+echo '--------------------------------------------------------------------------------'
+
+(time mpiexec_mpt -n $MPISIZE -ppn $PPN ./$MPIPROG) 2>&1
+
+echo '--------------------------------------------------------------------------------'
+echo 'Finished at' `date`
