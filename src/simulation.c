@@ -83,11 +83,15 @@ int initCmdLineArgs(int argc, char *argv[],int actorId)
     {
     	INITIAL_NUM_OF_INFECTED_SQUIRRELS = infection->ival[0];
     }
+    
+    bool isNumOfSquirrelsValid    = (NUM_OF_SQUIRRELS >= INITIAL_NUM_OF_INFECTED_SQUIRRELS);
+    bool isMaxNumOfSquirrelsValid = (MAX_NUM_OF_SQUIRRELS > NUM_OF_SQUIRRELS) ;
+    bool areAllValuesPositive     = (NUM_OF_SQUIRRELS >= 0 && INITIAL_NUM_OF_INFECTED_SQUIRRELS >= 0 && MAX_NUM_OF_SQUIRRELS > 0);
 
 
-	if(MAX_NUM_OF_SQUIRRELS <= NUM_OF_SQUIRRELS)
+	if(!isNumOfSquirrelsValid || !isMaxNumOfSquirrelsValid || !areAllValuesPositive)
 	{
-		if(actorId == 0) printf("[ERROR]  MAX_NUM_OF_SQUIRRELS <= NUM_OF_SQUIRRELS \n");
+		if(actorId == 0) printf("[ERROR] Command line arguments are not valid. \n");
 		exitcode =1;
 		goto exit;
 	}
