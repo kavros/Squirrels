@@ -11,7 +11,6 @@ void initSquirrelData(squirrelState st)
 	sqData.stepsCnt  				= 0;
 	sqData.infectedSteps			= 0;
 	for(int i=0; i<50; i++){ sqData.infectionLevel[i] =0; sqData.populationInflux[i] =0;}
-	simulationMsg recvMsg;
 }
 
 /**
