@@ -21,6 +21,10 @@ int* AC_diffActorsQuantity;	// An array that includes how many actors we have fo
 int (**AC_functPtrs)();		// Holds a fuction pointer for each type of actor.
 MPI_Datatype AC_msgDataType;	// Holds the MPI datatype for the message that actor use.
 
+void* msgQueue[AC_MAX_MSG_QUEUE_SIZE];	// the array/queue that holds all actors messages
+void* msg; 								// every actor use this buffer to store a message before copy it to the queue
+void* buf; 								// we use this buffer to initialize MPI_Attach function.
+
 /**
 * Every actor needs to call this function before every other 
 * fuction inside the framework.

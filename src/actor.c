@@ -5,11 +5,6 @@
 #include "actor.h"
 #include <assert.h>
 
-void* msgQueue[AC_MAX_MSG_QUEUE_SIZE];
-void* msg;
-void* buf;
-
-
 void AC_Init(int argc, char *argv[])
 {
 	MPI_Init(&argc,&argv);
