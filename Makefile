@@ -1,7 +1,7 @@
 MF=	Makefile
 IDIR =./include
 CC=mpicc 
-CFLAGS=-I$(IDIR) -lm -g -Wall
+CFLAGS=-I$(IDIR) -g -Wall
 
 ODIR=build/obj
 OFILES=\
@@ -41,15 +41,15 @@ run:
 
 $(ODIR)/%.o: src/%.c 
 	mkdir -p build/obj
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@ -lm
 
 
 
 build/squirrels2:$(OFILES3)
-	$(CC) $(CFLAGS)  $^ -o $@
+	$(CC) $(CFLAGS)  $^ -o $@ -lm
 
 build/testPool: $(OFILES2) 
-	$(CC) $(CFLAGS)  $^ -o $@
+	$(CC) $(CFLAGS)  $^ -o $@ -lm
 
 
 
