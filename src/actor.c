@@ -221,8 +221,8 @@ void AC_SetActorTypes(int totalActors,int numOfDiffActorTypes,int* quantityForEa
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     if( (world_size < totalActors) & (AC_GetActorId() == 0) )
     {
-		printf("ACTOR ERROR: The number of requested actors is higher than the number of MPI processes!\n\n\n\n");		
-		MPI_Abort(MPI_COMM_WORLD,911);
+		printf("ACTOR ERROR: The number of MPI processes must be higher than the number of actors!\n\n\n\n");		
+		MPI_Abort(MPI_COMM_WORLD,911);		
     }
 
 	AC_numActors = totalActors;
@@ -231,7 +231,7 @@ void AC_SetActorTypes(int totalActors,int numOfDiffActorTypes,int* quantityForEa
 	/*Allocates array for function pointers and copy pointers to array*/
 	AC_functPtrs = malloc(sizeof(func_ptr_foreach_actorType)*numOfDiffActorTypes);	
 	memcpy(AC_functPtrs,func_ptr_foreach_actorType,sizeof(func_ptr_foreach_actorType)*numOfDiffActorTypes);
-
+	
 	AC_diffActorsQuantity = malloc(sizeof(int) *numOfDiffActorTypes );
     memcpy(AC_diffActorsQuantity,quantityForEachType,sizeof(int) *numOfDiffActorTypes);    
 }
