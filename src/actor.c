@@ -65,6 +65,7 @@ void AC_Bcast(void* msg,int source_actroId)
 **/
 static void AC_ActorCode()
 {
+
 	int actorType=-1;
 	// Receive a message from the master of the poll that determines the type of actor.
 	MPI_Recv(&actorType,1,MPI_INT,MPI_ANY_SOURCE,7,MPI_COMM_WORLD,MPI_STATUS_IGNORE); 	
@@ -90,7 +91,6 @@ static void AC_ActorCode()
 		AC_Iprobe(&outstanding);
 		if(!outstanding || msgsInQueueCnt == AC_MAX_MSG_QUEUE_SIZE-1)
 		{
-						
 			/**
 			* Calls the appropriate fuction based on the actor type.
 			* For example if the actor is a squirrel then it will call the SquirelCode function.
@@ -141,22 +141,25 @@ static void AC_ActorCode()
 **/
 void AC_PoolMaster()
 {
-	
 	int activeWorkers=0;
 	MPI_Request initialWorkerRequests[AC_numActors];
+
+	// Pool master wakes up all the workers.
+	for(int i=0; i<AC_numActors; i++)
+	{
+			int workerPid = startWorkerProcess();	
+			activeWorkers++;
+			MPI_Irecv(NULL, 0, MPI_INT, workerPid, 0, MPI_COMM_WORLD, &initialWorkerRequests[i]);		
+	}
 	
-	int cnt=0;
-	// Wake up all the actors.
+	int cnt=1;
+	// Pool master assigns an actor type to each worker.
 	for (int actorType=0; actorType < AC_numOfDiffActorTypes; actorType++)
 	{
 		for(int j=0; j< AC_diffActorsQuantity[actorType]; j++ )
 		{
-			int workerPid = startWorkerProcess();	
-			activeWorkers++;
-			MPI_Irecv(NULL, 0, MPI_INT, workerPid, 0, MPI_COMM_WORLD, &initialWorkerRequests[cnt]);
 			
-			MPI_Ssend(&actorType,1,MPI_INT,workerPid,7,MPI_COMM_WORLD);
-
+			MPI_Ssend(&actorType,1,MPI_INT,cnt,7,MPI_COMM_WORLD);
 			cnt++;
 	
 		}
@@ -194,8 +197,7 @@ void AC_RunSimulation()
 	int statusCode = processPoolInit();
 
 	if(statusCode == 2) //master
-	{
-
+	{		
 		AC_PoolMaster();
 	}
 	else if(statusCode == 1)
@@ -211,7 +213,7 @@ void AC_RunSimulation()
 void AC_SetActorTypes(int totalActors,int numOfDiffActorTypes,int* quantityForEachType,int (**func_ptr_foreach_actorType)())
 {
 	int expected_total_actors=0;
-
+	int world_size;
 	// Check that the the total quantity of different actors
 	// is equal with the total actors.
 	for(int i=0; i<numOfDiffActorTypes; i++)
@@ -219,11 +221,24 @@ void AC_SetActorTypes(int totalActors,int numOfDiffActorTypes,int* quantityForEa
 		expected_total_actors += quantityForEachType[i];
 	}
 	assert(expected_total_actors == totalActors);
+	
+
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    if( (world_size < totalActors) & (AC_GetActorId() == 0) )
+    {
+		printf("ACTOR ERROR: The number of requested actors is higher than the number of MPI processes!\n\n\n\n");		
+		MPI_Abort(MPI_COMM_WORLD,911);
+    }
 
 	AC_numActors = totalActors;
-	AC_functPtrs = func_ptr_foreach_actorType;
-    AC_numOfDiffActorTypes = numOfDiffActorTypes;
-    AC_diffActorsQuantity = quantityForEachType;
+	AC_numOfDiffActorTypes = numOfDiffActorTypes;
+	
+	/*Allocates array for function pointers and copy pointers to array*/
+	AC_functPtrs = malloc(sizeof(func_ptr_foreach_actorType)*numOfDiffActorTypes);	
+	memcpy(AC_functPtrs,func_ptr_foreach_actorType,sizeof(func_ptr_foreach_actorType)*numOfDiffActorTypes);
+
+	AC_diffActorsQuantity = malloc(sizeof(int) *numOfDiffActorTypes );
+    memcpy(AC_diffActorsQuantity,quantityForEachType,sizeof(int) *numOfDiffActorTypes);    
 }
  
 void AC_SetActorMsgDataType(int msgFields, AC_Datatype* msgDataTypeForEachField, int* blockLen,AC_Aint* disp)
@@ -262,6 +277,8 @@ void AC_Finalize()
 	}
 	free(msg);
 	free(buf);
+	free(AC_functPtrs);
+	free(AC_diffActorsQuantity);
 	MPI_Type_free(&AC_msgDataType);
 	MPI_Finalize();
 }
