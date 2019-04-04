@@ -23,7 +23,7 @@
 #PBS -j oe
 #PBS -l walltime=00:01:00
 #PBS -l place=excl
-#PBS -l select=3:ncpus=36
+#PBS -l select=6:ncpus=36
 
 #----------------------------------------------------------------------#
 # You should only have to change the following parameter NPROC, unless #
@@ -32,7 +32,7 @@
 # A node has 36 physical cores but we set ncpus=72 due to hyperthreads #
 #----------------------------------------------------------------------#
 
-NPROC=108
+NPROC=216
 
 #------------------------------------------------------------------------#
 # You should not have to edit below here for simple MPI jobs             #
