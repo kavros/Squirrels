@@ -1,0 +1,468 @@
+--------------------------------------------------------------------------------
+Running ./build/squirrels2 on 288 processes over 8 node(s)
+Issuing command: mpiexec_mpt -n 288 -ppn 36 ././build/squirrels2
+Started at Thu Apr 4 12:03:47 BST 2019
+--------------------------------------------------------------------------------
+[Global clock] Month 1 has 35 alive and 1 infected squirrels
+[Global Clock] 	 Num of cell 	  PopulationInflux 	 InfectionLevel
+	 	 0 		 16 			 2
+	 	 1 		 13 			 1
+	 	 2 		 7 			 1
+	 	 3 		 11 			 2
+	 	 4 		 8 			 0
+	 	 5 		 9 			 0
+	 	 6 		 9 			 0
+	 	 7 		 17 			 2
+	 	 8 		 21 			 2
+	 	 9 		 10 			 1
+	 	 10 		 8 			 2
+	 	 11 		 9 			 1
+	 	 12 		 9 			 2
+	 	 13 		 11 			 3
+	 	 14 		 7 			 0
+	 	 15 		 6 			 2
+
+[Global clock] Month 2 has 41 alive and 0 infected squirrels
+[Global Clock] 	 Num of cell 	  PopulationInflux 	 InfectionLevel
+	 	 0 		 118 			 12
+	 	 1 		 120 			 13
+	 	 2 		 108 			 14
+	 	 3 		 109 			 15
+	 	 4 		 113 			 4
+	 	 5 		 114 			 11
+	 	 6 		 97 			 7
+	 	 7 		 123 			 13
+	 	 8 		 130 			 16
+	 	 9 		 110 			 15
+	 	 10 		 124 			 14
+	 	 11 		 94 			 17
+	 	 12 		 131 			 17
+	 	 13 		 105 			 15
+	 	 14 		 107 			 11
+	 	 15 		 102 			 11
+
+[Global clock] Month 3 has 41 alive and 0 infected squirrels
+[Global Clock] 	 Num of cell 	  PopulationInflux 	 InfectionLevel
+	 	 0 		 220 			 10
+	 	 1 		 221 			 12
+	 	 2 		 197 			 13
+	 	 3 		 205 			 13
+	 	 4 		 209 			 4
+	 	 5 		 202 			 11
+	 	 6 		 203 			 7
+	 	 7 		 227 			 11
+	 	 8 		 228 			 14
+	 	 9 		 226 			 14
+	 	 10 		 224 			 12
+	 	 11 		 204 			 16
+	 	 12 		 254 			 15
+	 	 13 		 198 			 12
+	 	 14 		 217 			 11
+	 	 15 		 188 			 9
+
+[Global clock] Month 4 has 44 alive and 0 infected squirrels
+[Global Clock] 	 Num of cell 	  PopulationInflux 	 InfectionLevel
+	 	 0 		 315 			 0
+	 	 1 		 359 			 0
+	 	 2 		 304 			 0
+	 	 3 		 312 			 0
+	 	 4 		 316 			 0
+	 	 5 		 313 			 0
+	 	 6 		 305 			 0
+	 	 7 		 345 			 0
+	 	 8 		 329 			 0
+	 	 9 		 345 			 0
+	 	 10 		 357 			 0
+	 	 11 		 303 			 0
+	 	 12 		 359 			 0
+	 	 13 		 288 			 0
+	 	 14 		 331 			 0
+	 	 15 		 317 			 0
+
+[Global clock] Month 5 has 46 alive and 0 infected squirrels
+[Global Clock] 	 Num of cell 	  PopulationInflux 	 InfectionLevel
+	 	 0 		 348 			 0
+	 	 1 		 385 			 0
+	 	 2 		 337 			 0
+	 	 3 		 364 			 0
+	 	 4 		 318 			 0
+	 	 5 		 331 			 0
+	 	 6 		 369 			 0
+	 	 7 		 362 			 0
+	 	 8 		 357 			 0
+	 	 9 		 387 			 0
+	 	 10 		 348 			 0
+	 	 11 		 353 			 0
+	 	 12 		 368 			 0
+	 	 13 		 319 			 0
+	 	 14 		 372 			 0
+	 	 15 		 335 			 0
+
+[Global clock] Month 6 has 51 alive and 1 infected squirrels
+[Global Clock] 	 Num of cell 	  PopulationInflux 	 InfectionLevel
+	 	 0 		 372 			 0
+	 	 1 		 441 			 0
+	 	 2 		 415 			 0
+	 	 3 		 403 			 0
+	 	 4 		 368 			 0
+	 	 5 		 370 			 0
+	 	 6 		 403 			 0
+	 	 7 		 387 			 0
+	 	 8 		 382 			 0
+	 	 9 		 398 			 0
+	 	 10 		 397 			 0
+	 	 11 		 376 			 0
+	 	 12 		 364 			 0
+	 	 13 		 365 			 0
+	 	 14 		 398 			 0
+	 	 15 		 364 			 0
+
+[Global clock] Month 7 has 53 alive and 0 infected squirrels
+[Global Clock] 	 Num of cell 	  PopulationInflux 	 InfectionLevel
+	 	 0 		 424 			 4
+	 	 1 		 425 			 1
+	 	 2 		 441 			 6
+	 	 3 		 438 			 4
+	 	 4 		 403 			 2
+	 	 5 		 399 			 6
+	 	 6 		 433 			 1
+	 	 7 		 418 			 2
+	 	 8 		 398 			 1
+	 	 9 		 414 			 2
+	 	 10 		 414 			 2
+	 	 11 		 411 			 3
+	 	 12 		 401 			 2
+	 	 13 		 430 			 2
+	 	 14 		 437 			 3
+	 	 15 		 384 			 4
+
+[Global clock] Month 8 has 55 alive and 0 infected squirrels
+[Global Clock] 	 Num of cell 	  PopulationInflux 	 InfectionLevel
+	 	 0 		 452 			 6
+	 	 1 		 458 			 1
+	 	 2 		 465 			 6
+	 	 3 		 450 			 6
+	 	 4 		 437 			 4
+	 	 5 		 430 			 8
+	 	 6 		 441 			 2
+	 	 7 		 439 			 2
+	 	 8 		 438 			 1
+	 	 9 		 430 			 2
+	 	 10 		 450 			 4
+	 	 11 		 417 			 3
+	 	 12 		 442 			 2
+	 	 13 		 468 			 3
+	 	 14 		 457 			 3
+	 	 15 		 413 			 4
+
+[Global clock] Month 9 has 55 alive and 0 infected squirrels
+[Global Clock] 	 Num of cell 	  PopulationInflux 	 InfectionLevel
+	 	 0 		 486 			 2
+	 	 1 		 475 			 0
+	 	 2 		 438 			 0
+	 	 3 		 487 			 2
+	 	 4 		 444 			 2
+	 	 5 		 471 			 2
+	 	 6 		 463 			 1
+	 	 7 		 456 			 0
+	 	 8 		 466 			 0
+	 	 9 		 481 			 0
+	 	 10 		 464 			 2
+	 	 11 		 447 			 0
+	 	 12 		 508 			 0
+	 	 13 		 503 			 1
+	 	 14 		 483 			 0
+	 	 15 		 451 			 0
+
+[Global clock] Month 10 has 55 alive and 0 infected squirrels
+[Global Clock] 	 Num of cell 	  PopulationInflux 	 InfectionLevel
+	 	 0 		 493 			 0
+	 	 1 		 519 			 0
+	 	 2 		 452 			 0
+	 	 3 		 490 			 0
+	 	 4 		 439 			 0
+	 	 5 		 473 			 0
+	 	 6 		 465 			 0
+	 	 7 		 459 			 0
+	 	 8 		 501 			 0
+	 	 9 		 502 			 0
+	 	 10 		 449 			 0
+	 	 11 		 485 			 0
+	 	 12 		 524 			 0
+	 	 13 		 527 			 0
+	 	 14 		 500 			 0
+	 	 15 		 439 			 0
+
+[Global clock] Month 11 has 55 alive and 0 infected squirrels
+[Global Clock] 	 Num of cell 	  PopulationInflux 	 InfectionLevel
+	 	 0 		 493 			 0
+	 	 1 		 498 			 0
+	 	 2 		 438 			 0
+	 	 3 		 498 			 0
+	 	 4 		 462 			 0
+	 	 5 		 460 			 0
+	 	 6 		 438 			 0
+	 	 7 		 491 			 0
+	 	 8 		 489 			 0
+	 	 9 		 519 			 0
+	 	 10 		 482 			 0
+	 	 11 		 525 			 0
+	 	 12 		 521 			 0
+	 	 13 		 528 			 0
+	 	 14 		 514 			 0
+	 	 15 		 463 			 0
+
+[Global clock] Month 12 has 57 alive and 0 infected squirrels
+[Global Clock] 	 Num of cell 	  PopulationInflux 	 InfectionLevel
+	 	 0 		 500 			 0
+	 	 1 		 483 			 0
+	 	 2 		 460 			 0
+	 	 3 		 488 			 0
+	 	 4 		 473 			 0
+	 	 5 		 448 			 0
+	 	 6 		 444 			 0
+	 	 7 		 507 			 0
+	 	 8 		 515 			 0
+	 	 9 		 505 			 0
+	 	 10 		 470 			 0
+	 	 11 		 526 			 0
+	 	 12 		 492 			 0
+	 	 13 		 507 			 0
+	 	 14 		 523 			 0
+	 	 15 		 485 			 0
+
+[Global clock] Month 13 has 58 alive and 0 infected squirrels
+[Global Clock] 	 Num of cell 	  PopulationInflux 	 InfectionLevel
+	 	 0 		 493 			 0
+	 	 1 		 478 			 0
+	 	 2 		 468 			 0
+	 	 3 		 478 			 0
+	 	 4 		 494 			 0
+	 	 5 		 495 			 0
+	 	 6 		 463 			 0
+	 	 7 		 507 			 0
+	 	 8 		 511 			 0
+	 	 9 		 510 			 0
+	 	 10 		 479 			 0
+	 	 11 		 497 			 0
+	 	 12 		 513 			 0
+	 	 13 		 496 			 0
+	 	 14 		 518 			 0
+	 	 15 		 495 			 0
+
+[Global clock] Month 14 has 58 alive and 0 infected squirrels
+[Global Clock] 	 Num of cell 	  PopulationInflux 	 InfectionLevel
+	 	 0 		 507 			 0
+	 	 1 		 490 			 0
+	 	 2 		 514 			 0
+	 	 3 		 473 			 0
+	 	 4 		 516 			 0
+	 	 5 		 538 			 0
+	 	 6 		 495 			 0
+	 	 7 		 495 			 0
+	 	 8 		 503 			 0
+	 	 9 		 503 			 0
+	 	 10 		 496 			 0
+	 	 11 		 485 			 0
+	 	 12 		 486 			 0
+	 	 13 		 508 			 0
+	 	 14 		 523 			 0
+	 	 15 		 498 			 0
+
+[Global clock] Month 15 has 58 alive and 0 infected squirrels
+[Global Clock] 	 Num of cell 	  PopulationInflux 	 InfectionLevel
+	 	 0 		 509 			 0
+	 	 1 		 495 			 0
+	 	 2 		 506 			 0
+	 	 3 		 523 			 0
+	 	 4 		 525 			 0
+	 	 5 		 557 			 0
+	 	 6 		 502 			 0
+	 	 7 		 501 			 0
+	 	 8 		 491 			 0
+	 	 9 		 488 			 0
+	 	 10 		 530 			 0
+	 	 11 		 491 			 0
+	 	 12 		 527 			 0
+	 	 13 		 525 			 0
+	 	 14 		 509 			 0
+	 	 15 		 489 			 0
+
+[Global clock] Month 16 has 60 alive and 0 infected squirrels
+[Global Clock] 	 Num of cell 	  PopulationInflux 	 InfectionLevel
+	 	 0 		 541 			 0
+	 	 1 		 494 			 0
+	 	 2 		 502 			 0
+	 	 3 		 543 			 0
+	 	 4 		 526 			 0
+	 	 5 		 537 			 0
+	 	 6 		 509 			 0
+	 	 7 		 511 			 0
+	 	 8 		 503 			 0
+	 	 9 		 473 			 0
+	 	 10 		 559 			 0
+	 	 11 		 503 			 0
+	 	 12 		 501 			 0
+	 	 13 		 520 			 0
+	 	 14 		 495 			 0
+	 	 15 		 524 			 0
+
+[Global clock] Month 17 has 63 alive and 0 infected squirrels
+[Global Clock] 	 Num of cell 	  PopulationInflux 	 InfectionLevel
+	 	 0 		 532 			 0
+	 	 1 		 490 			 0
+	 	 2 		 508 			 0
+	 	 3 		 573 			 0
+	 	 4 		 526 			 0
+	 	 5 		 546 			 0
+	 	 6 		 507 			 0
+	 	 7 		 514 			 0
+	 	 8 		 534 			 0
+	 	 9 		 478 			 0
+	 	 10 		 533 			 0
+	 	 11 		 502 			 0
+	 	 12 		 540 			 0
+	 	 13 		 512 			 0
+	 	 14 		 483 			 0
+	 	 15 		 529 			 0
+
+[Global clock] Month 18 has 64 alive and 0 infected squirrels
+[Global Clock] 	 Num of cell 	  PopulationInflux 	 InfectionLevel
+	 	 0 		 556 			 0
+	 	 1 		 486 			 0
+	 	 2 		 558 			 0
+	 	 3 		 537 			 0
+	 	 4 		 536 			 0
+	 	 5 		 561 			 0
+	 	 6 		 511 			 0
+	 	 7 		 534 			 0
+	 	 8 		 548 			 0
+	 	 9 		 509 			 0
+	 	 10 		 502 			 0
+	 	 11 		 535 			 0
+	 	 12 		 532 			 0
+	 	 13 		 519 			 0
+	 	 14 		 514 			 0
+	 	 15 		 546 			 0
+
+[Global clock] Month 19 has 65 alive and 1 infected squirrels
+[Global Clock] 	 Num of cell 	  PopulationInflux 	 InfectionLevel
+	 	 0 		 537 			 0
+	 	 1 		 498 			 0
+	 	 2 		 568 			 0
+	 	 3 		 549 			 0
+	 	 4 		 555 			 0
+	 	 5 		 575 			 0
+	 	 6 		 562 			 0
+	 	 7 		 552 			 0
+	 	 8 		 546 			 0
+	 	 9 		 557 			 0
+	 	 10 		 505 			 0
+	 	 11 		 577 			 0
+	 	 12 		 575 			 0
+	 	 13 		 545 			 0
+	 	 14 		 527 			 0
+	 	 15 		 527 			 0
+
+[Global clock] Month 20 has 66 alive and 0 infected squirrels
+[Global Clock] 	 Num of cell 	  PopulationInflux 	 InfectionLevel
+	 	 0 		 587 			 3
+	 	 1 		 536 			 2
+	 	 2 		 554 			 1
+	 	 3 		 553 			 1
+	 	 4 		 543 			 0
+	 	 5 		 567 			 2
+	 	 6 		 600 			 2
+	 	 7 		 564 			 1
+	 	 8 		 547 			 3
+	 	 9 		 571 			 2
+	 	 10 		 533 			 1
+	 	 11 		 594 			 2
+	 	 12 		 589 			 0
+	 	 13 		 569 			 1
+	 	 14 		 537 			 1
+	 	 15 		 555 			 2
+
+[Global clock] Month 21 has 66 alive and 0 infected squirrels
+[Global Clock] 	 Num of cell 	  PopulationInflux 	 InfectionLevel
+	 	 0 		 576 			 6
+	 	 1 		 555 			 4
+	 	 2 		 546 			 1
+	 	 3 		 567 			 1
+	 	 4 		 546 			 2
+	 	 5 		 560 			 4
+	 	 6 		 613 			 4
+	 	 7 		 595 			 4
+	 	 8 		 577 			 4
+	 	 9 		 599 			 5
+	 	 10 		 586 			 6
+	 	 11 		 592 			 2
+	 	 12 		 598 			 4
+	 	 13 		 584 			 3
+	 	 14 		 542 			 5
+	 	 15 		 556 			 4
+
+[Global clock] Month 22 has 68 alive and 1 infected squirrels
+[Global Clock] 	 Num of cell 	  PopulationInflux 	 InfectionLevel
+	 	 0 		 607 			 3
+	 	 1 		 548 			 2
+	 	 2 		 570 			 0
+	 	 3 		 590 			 0
+	 	 4 		 542 			 2
+	 	 5 		 577 			 2
+	 	 6 		 577 			 2
+	 	 7 		 581 			 3
+	 	 8 		 602 			 1
+	 	 9 		 623 			 3
+	 	 10 		 599 			 5
+	 	 11 		 551 			 0
+	 	 12 		 599 			 4
+	 	 13 		 572 			 2
+	 	 14 		 583 			 4
+	 	 15 		 579 			 2
+
+[Global clock] Month 23 has 68 alive and 1 infected squirrels
+[Global Clock] 	 Num of cell 	  PopulationInflux 	 InfectionLevel
+	 	 0 		 601 			 3
+	 	 1 		 542 			 1
+	 	 2 		 593 			 1
+	 	 3 		 582 			 1
+	 	 4 		 560 			 1
+	 	 5 		 581 			 1
+	 	 6 		 550 			 0
+	 	 7 		 592 			 1
+	 	 8 		 620 			 0
+	 	 9 		 634 			 1
+	 	 10 		 617 			 4
+	 	 11 		 550 			 1
+	 	 12 		 600 			 1
+	 	 13 		 591 			 1
+	 	 14 		 616 			 1
+	 	 15 		 589 			 1
+
+[Global clock] Month 24 has 67 alive and 0 infected squirrels
+[Global Clock] 	 Num of cell 	  PopulationInflux 	 InfectionLevel
+	 	 0 		 618 			 6
+	 	 1 		 563 			 4
+	 	 2 		 596 			 1
+	 	 3 		 589 			 4
+	 	 4 		 581 			 3
+	 	 5 		 617 			 2
+	 	 6 		 563 			 3
+	 	 7 		 580 			 3
+	 	 8 		 579 			 1
+	 	 9 		 629 			 7
+	 	 10 		 604 			 9
+	 	 11 		 572 			 3
+	 	 12 		 579 			 4
+	 	 13 		 600 			 5
+	 	 14 		 622 			 4
+	 	 15 		 634 			 8
+
+
+real	0m9.350s
+user	0m0.017s
+sys	0m0.040s
+--------------------------------------------------------------------------------
+Finished at Thu Apr 4 12:03:57 BST 2019
+Warning: Permanently added 'r1i2n23.ib0.icexa.epcc.ed.ac.uk,10.148.0.194' (ECDSA) to the list of known hosts.
